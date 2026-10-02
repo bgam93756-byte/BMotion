@@ -1,0 +1,1284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1C1009">
+<meta name="description" content="Tap the butterscotch, build a candy empire and climb the leaderboard.">
+<title>Butterscotch Clicker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Figtree:wght@400;500;700;800&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Layout: sticky candy stage on the left, tabbed candy shop on the right (Shop · Upgrades · Trophies · Stats). Phones stack the stage above the shop. One warm, night-time candy-shop look. */
+:root{
+  --bg:#1C1009; --bg2:#26160C; --panel:#311D10; --panel2:#3D2515; --line:#5A3920;
+  --fg:#FFF4DF; --muted:#D3B48A; --dim:#8F7253;
+  --gold:#F4A93A; --gold-hi:#FFD983; --gold-lo:#A85A12; --cream:#F6E7C8;
+  --good:#A6DB78; --bad:#F08A6E; --ink:#2B1606;
+  --title:'Shrikhand','Fraunces',Georgia,serif;
+  --display:'Fraunces',Georgia,serif;
+  --body:'Figtree',system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+}
+html,body{min-height:100%}
+body{
+  background:
+    radial-gradient(900px 520px at 18% -8%, rgba(244,169,58,.20), transparent 62%),
+    radial-gradient(700px 500px at 100% 100%, rgba(168,90,18,.16), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(255,230,190,.022) 0 26px, transparent 26px 52px),
+    var(--bg);
+  color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.4;padding-inline:16px;
+}
+button{font-family:inherit}
+#bg,#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#bg{z-index:0}#fx{z-index:40}
+.app{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding-block:16px 48px;display:flex;flex-direction:column;gap:18px}
+
+/* Header */
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{margin:0;font-family:var(--title);font-weight:400;font-size:clamp(28px,4.6vw,42px);line-height:1.05;color:var(--gold-hi);
+  text-shadow:0 2px 0 var(--gold-lo),0 4px 0 #6B3608,0 10px 22px rgba(0,0,0,.5);letter-spacing:.01em}
+.news{flex:1 1 300px;min-width:0;height:44px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;padding:0 16px;overflow:hidden}
+.news .tag{flex-shrink:0;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+#news{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--cream);font-size:14px}
+#news.in{animation:newsIn .5s ease-out}
+@keyframes newsIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.acct{flex-shrink:0;display:flex;align-items:center;gap:8px;height:44px;padding:0 12px 0 4px;border-radius:22px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font-weight:700;font-size:13px;cursor:pointer;max-width:260px}
+.acct:hover{border-color:var(--gold)}
+.acct img{width:34px;height:34px;border-radius:50%;object-fit:cover;background:var(--panel2)}
+.acct .an{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct .as{display:block;font-weight:500;font-size:11px;color:var(--muted)}
+.lb{display:flex;flex-direction:column;gap:6px}
+.lbrow{display:grid;grid-template-columns:34px 36px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:var(--bg2);border:1px solid var(--line)}
+.lbrow.me{border-color:var(--gold);background:#3A2414}
+.lbrow .rk{font-family:var(--display);font-weight:900;font-size:20px;color:var(--gold-hi);text-align:center;font-variant-numeric:tabular-nums}
+.lbrow img{width:36px;height:36px;border-radius:50%;background:var(--panel2)}
+.lbrow .nm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbrow .sc{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.lbrow .sc small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:12px;min-height:50px;border-radius:13px;border:1px solid #DADCE0;background:#FFFFFF;color:#1F1F1F;font-weight:700;font-size:16px;cursor:pointer}
+.gbtn:hover{background:#F2F2F2}
+.gbtn:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.signin{position:fixed;inset:0;z-index:70;background:rgba(10,5,2,.72);display:grid;place-items:center;padding:16px}
+.signin .box{width:min(420px,100%);background:var(--panel);border:1px solid var(--gold);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px;text-align:center;box-shadow:0 30px 60px rgba(0,0,0,.6)}
+.signin h2{margin:0;font-family:var(--title);font-weight:400;font-size:30px;color:var(--gold-hi)}
+.signin p{margin:0;color:var(--muted);font-size:14px}
+.signin .me{display:flex;align-items:center;gap:12px;justify-content:center;font-weight:800;font-size:17px}
+.signin .me img{width:48px;height:48px;border-radius:50%}
+.iconbtn{flex-shrink:0;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);display:grid;place-items:center;cursor:pointer}
+.iconbtn:hover{border-color:var(--gold)}
+.iconbtn svg{width:22px;height:22px}
+
+/* Main grid */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,470px);gap:22px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Stage */
+.stage-col{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;min-width:0}
+@media (max-width:900px){.stage-col{position:static}}
+.bank-n{font-family:var(--display);font-weight:900;font-size:clamp(40px,6.4vw,64px);line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 3px 0 rgba(0,0,0,.4)}
+.bank-label{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:800}
+.bank-rate{color:var(--muted);font-variant-numeric:tabular-nums;font-size:15px}
+.bank-rate b{color:var(--fg);font-weight:700}
+.bank-rate b.boost{color:var(--gold-hi)}
+.buffs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.buff{position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;padding:7px 14px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--gold);font-size:13px;font-weight:700}
+.buff span{color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.buff i{position:absolute;left:0;bottom:0;height:3px;background:var(--gold-hi);border-radius:0 3px 0 0}
+.buff svg{width:16px;height:16px;color:var(--gold-hi)}
+.stage{position:relative;width:min(430px,88vw);aspect-ratio:1;max-width:100%;display:grid;place-items:center}
+.rays{position:absolute;inset:0;border-radius:50%;
+  background:repeating-conic-gradient(rgba(255,214,140,.13) 0 9deg,transparent 9deg 18deg);
+  -webkit-mask:radial-gradient(circle,#000 22%,transparent 68%);mask:radial-gradient(circle,#000 22%,transparent 68%);
+  animation:spin 70s linear infinite}
+.halo{position:absolute;inset:16%;border-radius:50%;background:radial-gradient(circle,rgba(255,186,84,.38),transparent 66%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+#candy{position:relative;width:94%;border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:transform .18s cubic-bezier(.3,1.7,.5,1);touch-action:manipulation}
+#candy:hover{transform:scale(1.04) rotate(-2deg)}
+#candy.press{transform:scale(.9);transition-duration:.05s}
+#candy:focus-visible{outline:3px solid var(--gold-hi);outline-offset:4px;border-radius:40%}
+.bob{display:block;animation:bob 4.5s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px) rotate(1.5deg)}}
+#candy svg{display:block;width:100%;height:auto;filter:drop-shadow(0 20px 26px rgba(0,0,0,.5))}
+.pop{position:absolute;pointer-events:none;font-family:var(--display);font-weight:900;font-size:24px;color:var(--gold-hi);white-space:nowrap;
+  text-shadow:0 2px 0 #6B3608,0 0 14px rgba(0,0,0,.6);transform:translate(-50%,-50%);animation:pop 1s ease-out forwards;z-index:3}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-70%) scale(1.15)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),-280%) scale(1)}}
+.tap-note{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.tap-note b{color:var(--fg)}
+.card{width:100%;max-width:470px;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:rgba(0,0,0,.28);border:1px solid var(--line);text-align:left}
+.card.daily{border-color:var(--gold);background:rgba(244,169,58,.1)}
+.event-banner{width:100%;max-width:470px;padding:12px 14px;border-radius:16px;border:1px solid #FF8A3D;background:rgba(255,120,40,.14);text-align:left;display:flex;flex-direction:column;gap:2px}
+.event-banner b{font-family:var(--display);font-size:17px;color:#FFB070}
+.event-banner span{font-size:13px;color:var(--muted)}
+.streak{display:flex;gap:5px}.streak i{flex:1;height:8px;border-radius:4px;background:var(--bg2);border:1px solid var(--line)}.streak i.on{background:var(--gold)}
+.mkt{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px 10px;align-items:center}
+.mkt .nm{font-weight:800;font-size:14px}.mkt .pr{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.up{color:var(--good)}.down{color:var(--bad)}
+.sbtn{min-width:44px;min-height:40px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);font-weight:800;font-size:13px;cursor:pointer}
+.sbtn:disabled{opacity:.45;cursor:not-allowed}
+.drop{position:fixed;z-index:35;top:-60px;width:56px;height:38px;border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;animation:fall linear forwards}
+.drop svg{width:100%;height:100%;pointer-events:none}
+@keyframes fall{to{transform:translateY(calc(100vh + 120px)) rotate(var(--rot))}}
+.rain-note{position:fixed;z-index:36;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);padding:8px 16px;border-radius:999px;background:rgba(18,10,5,.92);border:1px solid var(--gold);font-weight:800;font-size:14px;pointer-events:none}
+.pull{width:100%;max-width:470px;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:rgba(0,0,0,.28);border:1px solid var(--line);text-align:left}
+.pull-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pull-head b{font-family:var(--display);font-size:18px}
+.track{position:relative;height:34px;border-radius:17px;background:var(--bg2);border:1px solid var(--line);overflow:hidden}
+.zone{position:absolute;top:0;bottom:0;background:rgba(166,219,120,.28);border-left:2px solid var(--good);border-right:2px solid var(--good)}
+.zone.sweet{background:rgba(255,217,131,.45);border-color:var(--gold-hi)}
+.marker{position:absolute;top:3px;bottom:3px;width:8px;margin-left:-4px;border-radius:4px;background:var(--fg);box-shadow:0 0 10px rgba(255,255,255,.7)}
+.pips{display:flex;gap:6px}.pips i{width:14px;height:14px;border-radius:50%;background:var(--bg2);border:1px solid var(--line)}
+.pips i.hit{background:var(--good)}.pips i.sweet{background:var(--gold-hi)}.pips i.miss{background:var(--bad)}
+.perks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:420px){.perks{grid-template-columns:minmax(0,1fr)}}
+.perk{display:flex;flex-direction:column;gap:3px;padding:10px;border-radius:13px;border:1px solid var(--line);background:var(--bg2);color:var(--fg);text-align:left;cursor:pointer}
+.perk:disabled{cursor:not-allowed;opacity:.6}
+.perk.have{border-color:var(--gold)}
+.perk b{font-size:14px}.perk span{font-size:12px;color:var(--muted)}.perk em{font-style:normal;font-size:12px;font-weight:800;color:var(--gold-hi)}
+.combo{width:min(300px,80vw);display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.combo .bar{height:8px;border-radius:4px;background:var(--bg2);border:1px solid var(--line);overflow:hidden}
+.combo .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#FF7A3D);transition:width .15s}
+.combo.hot{color:var(--gold-hi)}
+.orders{width:100%;max-width:470px;display:flex;flex-direction:column;gap:8px;text-align:left}
+.order{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:11px 12px;border-radius:14px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
+.order.done{border-color:var(--good)}
+.order .od{font-weight:700;font-size:14px}
+.order .orw{font-size:12px;color:var(--muted)}
+.order .bar{grid-column:1/-1;height:6px;border-radius:3px;background:var(--bg2);overflow:hidden}
+.order .bar i{display:block;height:100%;background:var(--good)}
+.order .btn{min-height:40px;padding:0 14px;font-size:13px}
+.skins{display:flex;flex-wrap:wrap;gap:8px}
+.skin{display:flex;flex-direction:column;align-items:center;gap:4px;width:74px;padding:8px 4px;border-radius:12px;border:2px solid var(--line);background:var(--bg2);color:var(--fg);font-size:12px;font-weight:700;cursor:pointer}
+.skin[aria-pressed="true"]{border-color:var(--gold)}
+.skin:disabled{opacity:.45;cursor:not-allowed}
+.skin .sw{width:34px;height:34px;border-radius:50%}
+.skin small{color:var(--muted);font-weight:500;font-size:11px}
+.empire{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:470px}
+.chip{display:flex;align-items:center;gap:6px;padding:3px 10px 3px 3px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid var(--line);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.chip .mini{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:var(--fg)}
+.chip .mini svg{width:14px;height:14px}
+
+/* Panel + tabs */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:22px;overflow:hidden;min-width:0;
+  box-shadow:0 24px 50px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,230,190,.08)}
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:var(--bg2);border-bottom:1px solid var(--line)}
+.tab{position:relative;min-height:54px;border:0;background:none;color:var(--muted);font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 4px}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{color:var(--fg);background:var(--panel)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:22%;right:22%;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--gold)}
+.tab:focus-visible,.item:focus-visible,.upg:focus-visible,.seg button:focus-visible,.btn:focus-visible,.link:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--gold);color:var(--ink);font-size:11px;font-weight:800;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+.badge.soft{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+@media (max-width:560px){.tab{flex-direction:column;gap:3px;font-size:12px;min-height:62px}}
+.rgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:420px){.rgrid{grid-template-columns:minmax(0,1fr)}}
+.node{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:13px;border:1px solid var(--line);background:var(--bg2);color:var(--fg);text-align:left;cursor:pointer}
+.node:disabled{cursor:not-allowed}
+.node.locked{opacity:.5}
+.node.have{border-color:var(--good);background:#1F2A14}
+.node b{font-size:14px}.node span{font-size:12px;color:var(--muted)}.node em{font-style:normal;font-size:12px;font-weight:800;color:#9FD8FF}
+.crys{display:inline-flex;align-items:center;gap:6px;font-weight:800;color:#9FD8FF}
+.crys i{width:12px;height:12px;transform:rotate(45deg);background:linear-gradient(135deg,#E6F6FF,#6BC4F5 60%,#2D6C9C);border-radius:2px}
+.pane{padding:14px;display:flex;flex-direction:column;gap:10px}
+.pane-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pane-head h2{margin:0;font-family:var(--display);font-weight:900;font-size:20px}
+.sub{color:var(--muted);font-size:13px}
+.seg{display:flex;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
+.seg button{min-width:44px;height:38px;border:0;border-radius:9px;background:none;color:var(--muted);font-weight:800;font-size:13px;cursor:pointer;padding:0 8px}
+.seg button[aria-pressed="true"]{background:var(--gold);color:var(--ink)}
+
+/* Shop rows */
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:10px 14px 10px 10px;border-radius:16px;
+  border:1px solid var(--line);background:var(--bg2);color:var(--fg);text-align:left;cursor:pointer;opacity:1;
+  transition:transform .12s,border-color .15s,background .15s}
+.item:not(:disabled):hover{border-color:var(--gold);background:#2E1B0F;transform:translateY(-1px)}
+.item:not(:disabled):active{transform:scale(.985)}
+.item:disabled{cursor:not-allowed}
+.item:disabled .ico,.item:disabled .name{opacity:.6}
+.ico{width:54px;height:54px;border-radius:15px;display:grid;place-items:center;color:var(--fg);box-shadow:inset 0 -4px 0 rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.16)}
+.ico svg{width:30px;height:30px}
+.info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.name{font-weight:800;font-size:16px}
+.cost{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:13px;color:var(--good);font-variant-numeric:tabular-nums}
+.cost.no{color:var(--bad)}
+.cdot{flex-shrink:0;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#FFE7A3,#E7861C 62%,#8A430A)}
+.meta{font-size:12px;color:var(--muted);line-height:1.35}
+.owned{font-family:var(--display);font-weight:900;font-size:32px;color:var(--gold-hi);min-width:2ch;text-align:right;font-variant-numeric:tabular-nums}
+.item.locked .ico{background:#22140B!important;color:var(--dim)}
+.item.locked .name{letter-spacing:.25em;color:var(--dim)}
+
+/* Upgrades */
+.ugrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:420px){.ugrid{grid-template-columns:minmax(0,1fr)}}
+.upg{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:14px;border:1px solid var(--line);background:var(--bg2);color:var(--fg);text-align:left;cursor:pointer;opacity:1;transition:border-color .15s,transform .12s}
+.upg:not(:disabled):hover{border-color:var(--gold);transform:translateY(-1px)}
+.upg:disabled{cursor:not-allowed}
+.upg:disabled .ico{opacity:.6}
+.upg .ico{width:42px;height:42px;border-radius:11px;flex-shrink:0;border:2px solid}
+.upg .ico svg{width:22px;height:22px}
+.uinfo{display:flex;flex-direction:column;gap:3px;min-width:0}
+.uname{font-weight:800;font-size:14px;line-height:1.2}
+.udesc{font-size:12px;color:var(--muted);line-height:1.35}
+.empty{padding:22px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;font-size:14px}
+.owned-upgs{display:flex;flex-wrap:wrap;gap:5px}
+.mini-ico{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:var(--fg);border:2px solid}
+.mini-ico svg{width:17px;height:17px}
+h3{margin:6px 0 0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:800}
+
+/* Trophies */
+.progress{height:10px;border-radius:5px;background:var(--bg2);border:1px solid var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-lo),var(--gold-hi))}
+.agrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:420px){.agrid{grid-template-columns:minmax(0,1fr)}}
+.ach{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:13px;background:var(--bg2);border:1px solid var(--line);min-width:0}
+.medal{width:38px;height:38px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;background:#2A1A0F;color:var(--dim);border:2px solid #4A3020}
+.medal svg{width:20px;height:20px}
+.ach.got .medal{background:radial-gradient(circle at 35% 30%,#FFE7A3,#F4A93A 55%,#A85A12);color:var(--ink);border-color:#FFD983}
+.aname{display:block;font-weight:800;font-size:13px}
+.adesc{display:block;font-size:12px;color:var(--muted);line-height:1.3}
+.ach:not(.got) .aname{color:var(--dim)}
+
+/* Stats + melt */
+.stats{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px 16px;margin:0;font-variant-numeric:tabular-nums}
+.stats dt{color:var(--muted)}
+.stats dd{margin:0;font-weight:800;text-align:right}
+.melt{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:18px;border:1px dashed var(--gold);background:rgba(244,169,58,.07)}
+.melt-head{display:flex;align-items:center;gap:12px}
+.melt-head .medal{background:radial-gradient(circle at 35% 30%,#FFE7A3,#F4A93A 55%,#A85A12);color:var(--ink);border-color:#FFD983;width:46px;height:46px}
+.melt-head .medal svg{width:24px;height:24px}
+.melt h2{margin:0;font-family:var(--display);font-weight:900;font-size:20px}
+.melt p{margin:0;color:var(--muted);font-size:14px;max-width:62ch}
+.btn{min-height:46px;padding:0 20px;border-radius:13px;border:0;background:var(--gold);color:var(--ink);font-weight:800;font-size:15px;cursor:pointer;box-shadow:inset 0 -3px 0 rgba(0,0,0,.2)}
+.btn:hover:not(:disabled){background:var(--gold-hi)}
+.btn:disabled{background:var(--panel2);color:var(--dim);cursor:not-allowed;box-shadow:none}
+.btn.danger{background:var(--bad)}
+.link{align-self:flex-start;background:none;border:0;color:var(--muted);font-size:13px;text-decoration:underline;cursor:pointer;padding:10px 0;min-height:44px}
+.link.armed{color:var(--bad);font-weight:800}
+
+/* Golden butterscotch */
+#golden{position:fixed;z-index:30;width:116px;height:80px;border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  animation:gfloat 2.6s ease-in-out infinite;filter:drop-shadow(0 0 16px rgba(255,220,120,.95)) drop-shadow(0 0 4px #fff);transition:opacity 1.2s}
+#golden svg{width:100%;height:100%;animation:gwob 1.8s ease-in-out infinite}
+#golden.fade{opacity:.15}
+@keyframes gfloat{50%{transform:translateY(-12px)}}
+@keyframes gwob{0%,100%{transform:rotate(-10deg) scale(1)}50%{transform:rotate(10deg) scale(1.08)}}
+
+/* Toasts */
+#toasts{position:fixed;z-index:60;right:16px;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:8px;width:min(350px,calc(100vw - 32px));pointer-events:none}
+@media (max-width:640px){#toasts{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}}
+.toast{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:15px;background:rgba(18,10,5,.95);border:1px solid var(--gold);
+  box-shadow:0 14px 34px rgba(0,0,0,.55);animation:tin .4s cubic-bezier(.2,1.5,.4,1);transition:opacity .35s,transform .35s}
+.toast.out{opacity:0;transform:translateY(-8px)}
+.toast .tico{width:38px;height:38px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#FFE7A3,#F4A93A 55%,#A85A12);color:var(--ink)}
+.toast .tico svg{width:20px;height:20px}
+.toast b{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.toast span.tt{display:block;font-size:14px;line-height:1.3}
+@keyframes tin{from{opacity:0;transform:translateY(12px) scale(.96)}}
+
+@media (prefers-reduced-motion:reduce){
+  .rays,.bob,#golden,#golden svg{animation:none}
+  .pop{animation-duration:.6s}
+  #candy,.item,.upg{transition:none}
+}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="app">
+  <header class="top">
+    <h1 class="brand">Butterscotch Clicker</h1>
+    <div class="news" aria-label="Candy news"><span class="tag">News</span><span id="news"></span></div>
+    <button class="acct" id="acct" type="button" aria-haspopup="dialog"><img id="acctImg" alt=""><span><span class="an" id="acctName">Guest</span><span class="as" id="acctSub">Sign in</span></span></button>
+    <button class="iconbtn" id="mute" type="button" aria-label="Sound" aria-pressed="true"></button>
+  </header>
+
+  <main class="grid">
+    <section class="stage-col" aria-label="Your butterscotch">
+      <div>
+        <div class="bank-n" id="bank">0</div>
+        <div class="bank-label" id="bankLabel">butterscotches</div>
+      </div>
+      <div class="bank-rate"><b id="cps">0</b> per second</div>
+      <div class="buffs" id="buffs" aria-live="polite"></div>
+      <div class="stage" id="stage">
+        <div class="rays"></div>
+        <div class="halo"></div>
+        <button id="candy" type="button" aria-label="Tap the butterscotch"><span class="bob" id="candyArt"></span></button>
+      </div>
+      <div class="tap-note"><b id="cpc">1</b> per tap</div>
+      <div class="event-banner" id="eventBanner" hidden><b id="eventName"></b><span id="eventDesc"></span></div>
+      <div class="card daily" id="daily" hidden><div class="pull-head"><b style="font-family:var(--display);font-size:18px">Daily treat</b><span class="sub" id="dailyNote"></span></div><div class="streak" id="streak"></div><button class="btn" type="button" id="dailyBtn">Claim</button></div>
+      <div class="pull" id="pull"><div class="pull-head"><b>Candy pull</b><span class="sub" id="pullNote"></span></div>
+        <div class="track" id="track"><div class="zone" id="zone"></div><div class="zone sweet" id="szone"></div><div class="marker" id="marker"></div></div>
+        <div class="pull-head"><div class="pips" id="pips"><i></i><i></i><i></i><i></i><i></i></div><button class="btn" type="button" id="pullBtn">Start pulling</button></div></div>
+      <div class="combo" id="combo"><span id="comboTxt">Combo ×1.0</span><div class="bar"><i id="comboBar"></i></div></div>
+      <div class="empire" id="empire" aria-label="Your buildings"></div>
+      <div class="card" id="market"><div class="pull-head"><b style="font-family:var(--display);font-size:18px">Candy market</b><span class="sub" id="mktNote">Prices change every 10 seconds</span></div><div class="mkt" id="mkt"></div></div>
+      <div class="orders" aria-label="Customer orders"><h3>Customer orders</h3><div id="orders" style="display:flex;flex-direction:column;gap:8px"></div></div>
+    </section>
+
+    <section class="panel">
+      <div class="tabs" role="tablist" aria-label="Candy shop">
+        <button class="tab" role="tab" type="button" data-tab="shop" aria-selected="true">Shop</button>
+        <button class="tab" role="tab" type="button" data-tab="upg" aria-selected="false">Upgrades <span class="badge" id="upgBadge" hidden>0</span></button>
+        <button class="tab" role="tab" type="button" data-tab="ach" aria-selected="false">Trophies <span class="badge soft" id="achBadge">0</span></button>
+        <button class="tab" role="tab" type="button" data-tab="res" aria-selected="false">Research <span class="badge" id="resBadge" hidden>0</span></button>
+        <button class="tab" role="tab" type="button" data-tab="stats" aria-selected="false">Stats</button>
+      </div>
+
+      <div class="pane" id="pane-shop" role="tabpanel">
+        <div class="pane-head">
+          <h2>Buildings</h2>
+          <div class="seg" id="amt" role="group" aria-label="How many to buy">
+            <button type="button" data-amt="1">×1</button><button type="button" data-amt="10">×10</button><button type="button" data-amt="100">×100</button><button type="button" data-amt="max">Max</button>
+          </div>
+        </div>
+        <div class="list" id="shop"></div>
+      </div>
+
+      <div class="pane" id="pane-upg" role="tabpanel" hidden>
+        <div class="pane-head"><h2>Upgrades</h2><span class="sub" id="upgCount"></span></div>
+        <div class="ugrid" id="upgs"></div>
+        <h3>Bought</h3>
+        <div class="owned-upgs" id="ownedUpgs"></div>
+      </div>
+
+      <div class="pane" id="pane-ach" role="tabpanel" hidden>
+        <div class="pane-head"><h2>Trophies</h2><span class="sub" id="achSub"></span></div>
+        <div class="progress"><i id="achBar"></i></div>
+        <div id="achList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <div class="pane" id="pane-res" role="tabpanel" hidden>
+        <div class="pane-head"><h2>Research</h2><span class="crys"><i></i><span id="crysN">0</span> sugar crystals</span></div>
+        <p class="sub" style="margin:0">Earn sugar crystals by delivering orders, catching golden butterscotches and scoring 6+ in candy pull. Research stays when you melt down.</p>
+        <div id="resList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <div class="pane" id="pane-stats" role="tabpanel" hidden>
+        <div class="pane-head"><h2>Leaderboard</h2><span class="sub">Most butterscotch made, all time</span></div>
+        <div class="lb" id="lb"><div class="empty">Loading the leaderboard…</div></div>
+        <p class="sub" id="lbNote" style="margin:0"></p>
+        <div class="melt">
+          <div class="melt-head"><span class="medal" id="meltIcon"></span><h2>Melt down</h2></div>
+          <p>Melt everything back into one big pot and start a new run. You keep your trophies and get Caramel Crowns. Each crown adds 2% to all production, forever.</p>
+          <p id="meltInfo"></p>
+          <button class="btn" id="meltBtn" type="button" disabled>Melt down</button>
+        </div>
+        <h3>Crown perks</h3>
+        <p class="sub" id="perkNote" style="margin:0"></p>
+        <div class="perks" id="perks"></div>
+        <h3>Candy look</h3>
+        <div class="skins" id="skins"></div>
+        <h3>Your numbers</h3>
+        <dl class="stats" id="stats"></dl>
+        <button class="link" id="erase" type="button">Erase all progress</button>
+      </div>
+    </section>
+  </main>
+</div>
+<canvas id="fx"></canvas>
+<button id="golden" type="button" aria-label="Catch the golden butterscotch" hidden></button>
+<div class="signin" id="signin" role="dialog" aria-modal="true" aria-labelledby="siTitle" hidden><div class="box">
+  <h2 id="siTitle">Sign in</h2>
+  <div class="me" id="siMe"></div>
+  <p id="siText"></p>
+  <button class="gbtn" type="button" id="siGo"><svg viewBox="0 0 48 48" width="22" height="22" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Sign in with Google</button>
+  <button class="btn" type="button" id="siLoad" hidden>Load my cloud save</button>
+  <button class="link" type="button" id="siGuest" style="align-self:center">Play as guest</button>
+</div></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- number formatting ---------- */
+const LONG=['','thousand','million','billion','trillion','quadrillion','quintillion','sextillion','septillion','octillion','nonillion','decillion'];
+const SHORT=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
+function tier(x){return Math.min(Math.floor(Math.log10(x)/3),LONG.length-1);}
+function fmtS(x){if(!isFinite(x))return '∞';x=Math.max(0,x);if(x<1e6)return Math.floor(x).toLocaleString('en-US');const i=tier(x);return (x/Math.pow(1000,i)).toFixed(2)+SHORT[i];}
+function fmt(x){if(!isFinite(x))return '∞';x=Math.max(0,x);if(x<1e6)return Math.floor(x).toLocaleString('en-US');const i=tier(x);return (x/Math.pow(1000,i)).toFixed(3)+' '+LONG[i];}
+function fmtR(x){if(x<100&&x%1)return (Math.round(x*10)/10).toLocaleString('en-US');return fmtS(x);}
+function bankParts(x){x=Math.max(0,x);if(x<1e6)return [Math.floor(x).toLocaleString('en-US'),''];const i=tier(x);return [(x/Math.pow(1000,i)).toFixed(3),LONG[i]];}
+function dur(ms){const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d?`${d}d ${h}h`:h?`${h}h ${m}m`:`${m}m ${s%60}s`;}
+const rand=(a,b)=>a+Math.random()*(b-a);
+
+/* ---------- icons ---------- */
+const ICON={
+  grandma:'<circle cx="12" cy="13.5" r="6"/><circle cx="12" cy="5.2" r="2.3"/><circle cx="9.6" cy="13" r="1.5"/><circle cx="14.4" cy="13" r="1.5"/><path d="M11.1 13h1.8M10 16.6q2 1.3 4 0"/>',
+  pot:'<path d="M4 9h16M5 9v6.5a4.5 4.5 0 004.5 4.5h5a4.5 4.5 0 004.5-4.5V9M2 9h2M20 9h2M9 6q1.2-2 0-4M13 6q1.2-2 0-4"/>',
+  churn:'<path d="M7.5 8h9l1 13h-11zM12 8V2M9 2h6M7 13.5h10"/>',
+  kitchen:'<path d="M3 11l9-7 9 7M5 10v10h14V10M10 20v-5h4v5M16 6.5V3h2v5"/>',
+  factory:'<path d="M3 21V11l5 3v-3l5 3v-3l5 3V4h3v17zM7 18h2M12 18h2M17 18h1"/>',
+  mine:'<path d="M4 10Q12 2 20 10M12 6L7.5 21"/><path d="M15 19l3 2 2-3-3-2"/>',
+  river:'<path d="M2 7.5q2.5-3 5 0t5 0 5 0 5 0M2 12.5q2.5-3 5 0t5 0 5 0 5 0M2 17.5q2.5-3 5 0t5 0 5 0 5 0"/>',
+  bank:'<path d="M3 9l9-5 9 5M4 9h16M6 9v8M10 9v8M14 9v8M18 9v8M3 20h18M4 17h16"/>',
+  temple:'<path d="M12 3l9 17H3zM7.5 14h9M9.7 10h4.6M10 20v-3h4v3"/>',
+  tower:'<path d="M8 21V10h8v11M6.5 10L12 3l5.5 7M11 14h2v3h-2zM4 21h16"/><path d="M19 3l.6 1.4L21 5l-1.4.6L19 7l-.6-1.4L17 5l1.4-.6z"/>',
+  rocket:'<path d="M12 2q5 4 5 11l-2 4H9l-2-4q0-7 5-11zM9 17l-2.5 4M15 17l2.5 4M12 17v4"/><circle cx="12" cy="10" r="1.8"/>',
+  lab:'<path d="M9 3h6M10 3v6L4 19a1.5 1.5 0 001.3 2h13.4A1.5 1.5 0 0020 19l-6-10V3M6.5 15h11"/>',
+  portal:'<ellipse cx="12" cy="11" rx="6" ry="8.5"/><ellipse cx="12" cy="11" rx="2.8" ry="4.8"/><path d="M4 21h16"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9L7 7M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  verse:'<circle cx="8.5" cy="9" r="4.5"/><circle cx="15.5" cy="9" r="4.5"/><circle cx="12" cy="15.5" r="4.5"/>',
+  cloud:'<path d="M7 18a4 4 0 010-8 5 5 0 019.6-1A3.5 3.5 0 0117 18z"/>',
+  dragon:'<path d="M4 18q2-9 9-10l3-4 1 4 3 1-3 2q-1 7-8 7zM13 12h.01"/>',
+  moon:'<path d="M20 14A8 8 0 1110 4a6.5 6.5 0 0010 10z"/>',
+  nebula:'<path d="M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0M12 4a8 8 0 018 8M20 12a8 8 0 01-8 8M12 20a8 8 0 01-8-8M4 12a8 8 0 018-8"/>',
+  hole:'<circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4"/>',
+  brain:'<path d="M9 4a3 3 0 00-3 3 3 3 0 00-2 5 3 3 0 002 5 3 3 0 006 1V5a2 2 0 00-3-1zM15 4a3 3 0 013 3 3 3 0 012 5 3 3 0 01-2 5 3 3 0 01-6 1"/>',
+  oven:'<rect x="3" y="4" width="18" height="16" rx="2"/><rect x="6" y="10" width="12" height="7" rx="1"/><path d="M7 7h.01M11 7h.01M15 7h2"/>',
+  code:'<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
+  dream:'<path d="M3 20h18M5 20V10l4 3V9l4 3V7l4 3v10M17 4l.6 1.4L19 6l-1.4.6L17 8l-.6-1.4L15 6l1.4-.6z"/>',
+  final:'<path d="M4 10h16M5 10v6a4 4 0 004 4h6a4 4 0 004-4v-6M12 2l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/>',
+  time:'<path d="M6 3h12M6 21h12M7 3q0 6 5 9-5 3-5 9M17 3q0 6-5 9 5 3 5 9M9.5 18.5h5"/>',
+  click:'<path d="M9 11V4.5a1.5 1.5 0 013 0V11m0-1.5a1.5 1.5 0 013 0V12m0-1a1.5 1.5 0 013 0v4a6 6 0 01-6 6h-1a6 6 0 01-5-2.7L4 14.5a1.5 1.5 0 012.5-1.6L9 15"/>',
+  flavor:'<circle cx="12" cy="12" r="4.5"/><path d="M7.5 12L2.5 8.5v7zM16.5 12l5-3.5v7z"/><path d="M10.5 10.2a2 2 0 012-.8"/>',
+  star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  trophy:'<path d="M8 4h8v5a4 4 0 01-8 0zM8 6H5a3 3 0 003 4M16 6h3a3 3 0 01-3 4M12 13v4M8 20h8M10 17h4"/>',
+  crown:'<path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5zM5 19h14"/>',
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  sound:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>',
+  mute:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>'
+};
+const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+
+const MONTH=new Date().getMonth();
+const EVENT=MONTH===9?{id:'halloween',name:'Candy Corn Halloween',desc:'All of October: +10% production, a candy corn look, spooky news and 2 event trophies.',skin:{id:'corn',name:'Candy corn',need:0,c:['#FFF4D6','#FFC93C','#F07B1E','#6E2A08']}}
+  :MONTH===11?{id:'winter',name:'Peppermint Winter',desc:'All of December: +10% production, a peppermint look, frosty news and 2 event trophies.',skin:{id:'mint2',name:'Peppermint',need:0,c:['#FFFFFF','#FFD6D6','#E0303F','#7A0E18']}}
+  :MONTH===1?{id:'valentine',name:'Sweetheart Valentine',desc:'All of February: +10% production, a sweetheart look, lovely news and 2 event trophies.',skin:{id:'heart',name:'Sweetheart',need:0,c:['#FFE6F0','#FF9EC4','#E0457E','#6E1235']}}:null;
+const SKINS=[
+ {id:'classic',name:'Classic',need:0,c:['#FFE9A8','#FFBE55','#E3801A','#7A3A06']},
+ {id:'mint',name:'Mint',need:10,c:['#E8FFF4','#8EEBC4','#2FAF82','#11563E']},
+ {id:'cherry',name:'Cherry',need:20,c:['#FFE0E0','#FF7A7A','#D2283A','#6B0E1A']},
+ {id:'berry',name:'Blueberry',need:30,c:['#E3ECFF','#8FB0FF','#4561D8','#1A2366']},
+ {id:'grape',name:'Grape',need:45,c:['#F3E4FF','#C79BFF','#8146D1','#3A1566']},
+ {id:'midnight',name:'Midnight',need:60,c:['#C9D2E8','#5A6688','#262C44','#0B0D18']},
+ {id:'gold',name:'Pure gold',need:80,c:['#FFFCE8','#FFE680','#F5B800','#8F6200']}
+];
+if(EVENT)SKINS.push(EVENT.skin);
+function candySvg(p,gold,pal){
+  const c=pal||(gold?['#FFFCE8','#FFE680','#F5B800','#8F6200']:['#FFE9A8','#FFBE55','#E3801A','#7A3A06']);
+  const spark=gold?`<path d="M268 36l5 14 14 5-14 5-5 14-5-14-14-5 14-5z" fill="#fff"/><path d="M52 168l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#fff"/>`:'';
+  return `<svg viewBox="0 0 320 220" aria-hidden="true"><defs>
+  <radialGradient id="${p}b" cx="36%" cy="30%" r="80%"><stop offset="0" stop-color="${c[0]}"/><stop offset=".26" stop-color="${c[1]}"/><stop offset=".68" stop-color="${c[2]}"/><stop offset="1" stop-color="${c[3]}"/></radialGradient>
+  <linearGradient id="${p}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF9EC" stop-opacity=".96"/><stop offset=".5" stop-color="#F1E0BC" stop-opacity=".86"/><stop offset="1" stop-color="#D6BC88" stop-opacity=".92"/></linearGradient>
+  </defs>
+  <g id="${p}t">
+    <path d="M100 98L34 50Q25 66 32 80Q17 95 30 110Q17 125 32 140Q25 154 34 170L100 122Z" fill="url(#${p}w)"/>
+    <path d="M100 103L40 68M100 110L28 110M100 117L40 152" stroke="#C4A26A" stroke-width="2.5" stroke-linecap="round" opacity=".75"/>
+    <path d="M34 50Q25 66 32 80Q17 95 30 110Q17 125 32 140Q25 154 34 170" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>
+    <rect x="86" y="92" width="20" height="36" rx="9" fill="#E8D19E"/>
+    <rect x="89" y="96" width="5" height="28" rx="2.5" fill="#fff" opacity=".5"/>
+  </g>
+  <use href="#${p}t" transform="translate(320 0) scale(-1 1)"/>
+  <ellipse cx="160" cy="110" rx="64" ry="60" fill="url(#${p}b)"/>
+  <ellipse cx="160" cy="110" rx="62.5" ry="58.5" fill="none" stroke="${c[3]}" stroke-opacity=".55" stroke-width="3"/>
+  <path d="M116 124Q160 164 206 116" fill="none" stroke="${c[0]}" stroke-opacity=".33" stroke-width="8" stroke-linecap="round"/>
+  <path d="M124 106Q150 128 190 98" fill="none" stroke="${c[3]}" stroke-opacity=".18" stroke-width="5" stroke-linecap="round"/>
+  <ellipse cx="135" cy="81" rx="23" ry="11" fill="#fff" opacity=".78" transform="rotate(-28 135 81)"/>
+  <circle cx="167" cy="68" r="4.5" fill="#fff" opacity=".65"/>
+  <ellipse cx="197" cy="143" rx="12" ry="5" fill="#fff" opacity=".22" transform="rotate(-28 197 143)"/>
+  ${spark}</svg>`;
+}
+
+/* ---------- game data ---------- */
+const B=[
+ {id:'grandma',name:'Stirring Grandma',plural:'Stirring Grandmas',short:'Grandma',base:15,cps:.1,hue:'#A04A35',flav:'Stirs slowly and tells you about the old days.',tiers:['Rolling pins','Reading glasses','Knitted oven mitts','Secret family recipe','Grandma union']},
+ {id:'pot',name:'Copper Pot',plural:'Copper Pots',short:'Pot',base:100,cps:1,hue:'#B0632A',flav:'Bubbles at 290°F, right at the soft-crack stage.',tiers:['Thicker copper','Candy thermometer','Double boiler','Self-stirring ladle','Bottomless pot']},
+ {id:'churn',name:'Butter Churn',plural:'Butter Churns',short:'Churn',base:1100,cps:8,hue:'#9A7A22',flav:'Fresh butter is half of the word.',tiers:['Oak paddles','Jersey cream','Clockwork crank','Steam churn','Perpetual churn']},
+ {id:'kitchen',name:'Candy Kitchen',plural:'Candy Kitchens',short:'Kitchen',base:12000,cps:47,hue:'#447A50',flav:'Brown sugar, butter, cream, a pinch of salt. Repeat.',tiers:['Marble countertops','Bigger stoves','Night shift','Michelin stars','Kitchen of tomorrow']},
+ {id:'factory',name:'Toffee Factory',plural:'Toffee Factories',short:'Factory',base:130000,cps:260,hue:'#4F6385',flav:'Pours, cuts and wraps around the clock.',tiers:['Conveyor belts','Wrapping machines','Break rooms','Robot candy-pullers','Toffee megaplex']},
+ {id:'mine',name:'Butterscotch Mine',plural:'Butterscotch Mines',short:'Mine',base:1.4e6,cps:1400,hue:'#6A5544',flav:'Deep veins of crystallized caramel.',tiers:['Sharper pickaxes','Mine carts','Sugar dynamite','Deep-core drills','Mantle of molasses']},
+ {id:'river',name:'Caramel River',plural:'Caramel Rivers',short:'River',base:2e7,cps:7800,hue:'#A85A1A',flav:'Flows slowly. Very slowly.',tiers:['Wider banks','Waterwheels','Upstream dams','Syrup tides','Ocean of caramel']},
+ {id:'bank',name:'Sugar Bank',plural:'Sugar Banks',short:'Bank',base:3.3e8,cps:44000,hue:'#33706A',flav:'Interest paid in candy, compounded hourly.',tiers:['Sweet interest','Vault of sweets','Candy bonds','Sugar stock market','Central sugar reserve']},
+ {id:'temple',name:'Candy Temple',plural:'Candy Temples',short:'Temple',base:5.1e9,cps:2.6e5,hue:'#8E6128',flav:'Ancient wrappers hold ancient sweets.',tiers:['Golden idols','Chanting monks','Sacred spoons','Holy wrappers','The candy deity']},
+ {id:'tower',name:'Wizard Tower',plural:'Wizard Towers',short:'Wizard',base:7.5e10,cps:1.6e6,hue:'#61468A',flav:'Summons butterscotch out of thin air.',tiers:['Apprentice wands','Spell of stirring','Arcane sugar','Archmage of toffee','Infinite spellbook']},
+ {id:'rocket',name:'Scotch Rocket',plural:'Scotch Rockets',short:'Rocket',base:1e12,cps:1e7,hue:'#38548F',flav:'Harvests sugar from other planets.',tiers:['Better fuel','Moon sugar fields','Martian dairies','Warp drive','Galactic candy fleet']},
+ {id:'lab',name:'Alchemy Lab',plural:'Alchemy Labs',short:'Alchemist',base:1.4e13,cps:6.5e7,hue:'#2B7357',flav:'Turns gold into butterscotch. A better deal.',tiers:['Lead to butter',"Philosopher's toffee",'Transmutation circles','Elixir of sweetness','The golden equation']},
+ {id:'time',name:'Time Machine',plural:'Time Machines',short:'Time Machine',base:1.7e14,cps:4.3e8,hue:'#833753',flav:"Brings back candy you haven't made yet.",tiers:['Flux capacitor','Prehistoric candy','Recipes from the future','Paradox loops','Candy shop at the end of time']},
+ {id:'portal',name:'Candy Portal',plural:'Candy Portals',short:'Portal',base:2.1e15,cps:2.9e9,hue:'#2C6A88',icon:'portal',flav:'Opens onto a dimension made of fudge.',tiers:['Stable rifts','Fudge dimension','Portal network','Sweet singularity gate','Every door leads here']},
+ {id:'star',name:'Sugar Star',plural:'Sugar Stars',short:'Star',base:2.6e16,cps:2.1e10,hue:'#86701A',icon:'sun',flav:'Fuses hydrogen into brown sugar.',tiers:['Solar spoons','Caramel corona','Dyson wrapper','Supernova syrup','Galaxy of sweets']},
+ {id:'verse',name:'Multiverse Kitchen',plural:'Multiverse Kitchens',short:'Multiverse',base:3.1e17,cps:1.5e11,hue:'#57398A',icon:'verse',flav:'Every version of you is making butterscotch.',tiers:['Parallel pots','Alternate grandmas','Infinite stoves','Reality whisk','All of them, at once']},
+ {id:'cloud',name:'Cloud Confectionery',plural:'Cloud Confectioneries',short:'Cloud',base:3.8e18,cps:1e12,hue:'#4E7FA6',icon:'cloud',flav:'Rains butterscotch on lucky towns.',tiers:['Fluffier clouds','Sugar drizzle','Thunder toffee','Storm of sweets','Sky full of candy']},
+ {id:'dragon',name:'Dragon Hatchery',plural:'Dragon Hatcheries',short:'Dragon',base:4.6e19,cps:7e12,hue:'#9A3A2A',icon:'dragon',flav:'Dragon breath caramelizes sugar instantly.',tiers:['Warm nests','Fire training','Hoard of sweets','Elder dragons','Dragon queen of candy']},
+ {id:'moon',name:'Sugar Moon',plural:'Sugar Moons',short:'Moon',base:5.5e20,cps:4.8e13,hue:'#5D6378',icon:'moon',flav:'Made of brown sugar, not cheese.',tiers:['Lunar spoons','Crater pots','Moon tides','Full moon frenzy','Eclipse of sweetness']},
+ {id:'nebula',name:'Candy Nebula',plural:'Candy Nebulae',short:'Nebula',base:6.6e21,cps:3.3e14,hue:'#7A3D86',icon:'nebula',flav:'A cloud of sugar dust light-years wide.',tiers:['Stellar dust','Gravity wells','Cosmic stirring','Star nursery','Galactic swirl']},
+ {id:'hole',name:'Toffee Black Hole',plural:'Toffee Black Holes',short:'Black Hole',base:8e22,cps:2.3e15,hue:'#3A2E4A',icon:'hole',flav:'Nothing escapes it, except butterscotch.',tiers:['Event horizon','Spaghetti toffee','Hawking candy','Wormhole delivery','Singularity of sweet']},
+ {id:'brain',name:'Butterscotch Brain',plural:'Butterscotch Brains',short:'Brain',base:9.6e23,cps:1.6e16,hue:'#A25475',icon:'brain',flav:'Thinks only about butterscotch. Same as you.',tiers:['Big thoughts','Sweet neurons','Candy dreams','Hive mind','Galaxy brain']},
+ {id:'ioven',name:'Infinity Oven',plural:'Infinity Ovens',short:'Infinity Oven',base:1.15e25,cps:1.1e17,hue:'#B4572A',icon:'oven',flav:'Preheats forever. Never burns.',tiers:['Endless racks','Eternal flame','Recursive baking','Timeless timer','Oven of everything']},
+ {id:'code',name:'Candy Code',plural:'Candy Codes',short:'Code',base:1.4e26,cps:7.7e17,hue:'#2E7A6A',icon:'code',flav:'The universe is a simulation. It runs on butterscotch.',tiers:['Faster loops','Sweet algorithms','Candy compiler','Self-writing code','The source of sweetness']},
+ {id:'dream',name:'Dream Factory',plural:'Dream Factories',short:'Dream',base:1.7e27,cps:5.4e18,hue:'#4C5BA8',icon:'dream',flav:'Everyone dreams of candy. Now it is real.',tiers:['Night shift dreams','Lucid baking','Shared dreams','Dream within a dream','Sweetest dream']},
+ {id:'final',name:'The Final Pot',plural:'Final Pots',short:'Final Pot',base:2e28,cps:3.8e19,hue:'#B08A1E',icon:'final',flav:'The last pot anyone will ever need.',tiers:['Golden handles','Cosmic lid','Bottomless depth','Everything stew','The end of hunger']}
+];
+const TIERS=[{n:1,m:10,c:'#C98A4B'},{n:5,m:50,c:'#C9CED6'},{n:25,m:500,c:'#F2C14E'},{n:50,m:5e4,c:'#7FD4C1'},{n:100,m:5e6,c:'#C58CF2'}];
+
+const U=[];
+B.forEach(b=>TIERS.forEach((t,i)=>U.push({id:b.id+i,name:b.tiers[i],desc:`${b.plural} make twice as much.`,cost:b.base*t.m,icon:b.icon||b.id,hue:b.hue,tier:t.c,kind:'b',b:b.id,unlock:()=>(S.own[b.id]||0)>=t.n})));
+[['Sturdy finger',100,'c'],['Iron finger',500,'c'],['Butter fingers',1e4,'cp'],['Golden thumb',1e5,'cp'],['Diamond knuckles',1e7,'cp'],['Cosmic poke',1e9,'cp'],['Hand of the candy deity',1e11,'cp'],['Infinite tap',1e13,'cp']]
+ .forEach(([name,cost,kind],i)=>U.push({id:'c'+i,name,desc:kind==='c'?'Taps are twice as strong.':'Each tap also adds 1% of your per-second rate.',cost,icon:'click',hue:'#7A4E26',tier:TIERS[Math.min(4,i>>1)].c,kind,unlock:()=>S.earned>=cost*.2||S.clicks>=[10,60][i]}));
+[['Vanilla bean',1e5,.05],['Sea salt flakes',1e6,.05],['Dark brown sugar',1e7,.1],['Clotted cream',1e8,.1],['Smoked honey',1e9,.15],['Saffron threads',1e10,.15],['Stardust sugar',1e12,.2],['Dragon butter',1e14,.25]]
+ .forEach(([name,cost,pct],i)=>U.push({id:'f'+i,name,desc:`Everything makes ${Math.round(pct*100)}% more.`,cost,icon:'flavor',hue:'#B35F18',tier:TIERS[Math.min(4,i>>1)].c,kind:'f',pct,unlock:()=>S.earned>=cost*.2}));
+U.push({id:'g0',name:'Lucky wrapper',desc:'Golden butterscotches show up twice as often.',cost:777777,icon:'star',hue:'#9C7408',tier:'#F2C14E',kind:'gf',unlock:()=>S.golden>=3});
+U.push({id:'g1',name:'Shiny wrapper',desc:'Golden butterscotches stay twice as long.',cost:77777777,icon:'star',hue:'#9C7408',tier:'#7FD4C1',kind:'gd',unlock:()=>S.golden>=7});
+U.push({id:'g2',name:'Get lucky',desc:'Golden effects last twice as long.',cost:7777777777,icon:'star',hue:'#9C7408',tier:'#C58CF2',kind:'ge',unlock:()=>S.golden>=17});
+
+const EFF={
+  frenzy:{name:'Frenzy',desc:'Production ×7',dur:77,cps:7,w:45},
+  lucky:{name:'Lucky!',w:30},
+  clickf:{name:'Tap frenzy',desc:'Taps ×777',dur:13,click:777,w:15},
+  ruby:{name:'Ruby rush',desc:'Production and taps ×2',dur:60,cps:2,click:2,w:10}
+};
+
+/* ---------- state ---------- */
+const fresh=()=>({bank:0,earned:0,allTime:0,clicks:0,clickEarned:0,golden:0,own:{},upg:{},ach:{},crowns:0,melts:0,buffs:[],
+  runStart:Date.now(),firstStart:Date.now(),saved:Date.now(),muted:false,amt:1,tab:'shop',revealed:{},crystals:0,research:{},lastDay:'',streak:0,rainCaught:0,eventTaps:0,eventRain:0,mkt:{},mktProfit:0,crownBal:0,perks:{},pulls:0,pullNext:0,bought:0,orders:[],ordersDone:0,skin:'classic'});
+let S=fresh();
+let D={base:0,cps:0,click:1,per:{},g:1,fl:0,achN:0,goldFreq:1,goldDur:1,effDur:1,cb:1,kb:1};
+let speedFlag=false,awayFlag=false;
+
+/* ---------- trophies ---------- */
+const A=[];
+const ach=(id,cat,name,desc,test)=>A.push({id,cat,name,desc,test});
+[[1,'First bite'],[1e3,'Sweet tooth'],[1e5,'Sugar rush'],[1e6,'Candy millionaire'],[1e9,'Butterscotch billionaire'],[1e12,'Trillion treats'],[1e15,'Sticky galaxy'],[1e18,'The sweet singularity']]
+ .forEach(([n,name],i)=>ach('e'+i,'Making',name,`Make ${fmtS(n)} butterscotch${n>1?'es':''} in one run.`,()=>S.earned>=n));
+[[1,'Simmering'],[10,'Rolling boil'],[100,'Hard crack'],[1e3,'Candy conveyor'],[1e4,'Sugar storm'],[1e5,'Caramel cyclone'],[1e6,'Butterscotch tsunami'],[1e8,'Sweetness unbound']]
+ .forEach(([n,name],i)=>ach('r'+i,'Speed',name,`Make ${fmtS(n)} per second.`,()=>D.cps>=n));
+[[1,'Poke'],[100,'Tap happy'],[1000,'Finger workout'],[5000,'Tapping champion'],[25000,'Tap legend']]
+ .forEach(([n,name],i)=>ach('k'+i,'Tapping',name,`Tap the candy ${n.toLocaleString('en-US')} time${n>1?'s':''}.`,()=>S.clicks>=n));
+[[1e3,'Hand-made'],[1e6,'Artisan'],[1e9,'Master confectioner']]
+ .forEach(([n,name],i)=>ach('h'+i,'Tapping',name,`Make ${fmtS(n)} by tapping.`,()=>S.clickEarned>=n));
+ach('speed','Tapping','Stop poking me','Tap 15 times in 2 seconds.',()=>speedFlag);
+B.forEach(b=>[[1,`Hello, ${b.short}`],[50,`${b.short} crew`],[100,`${b.short} empire`]]
+ .forEach(([n,name],i)=>ach(b.id+'_'+i,'Buildings',name,`Own ${n} ${n===1?b.name:b.plural}.`,()=>(S.own[b.id]||0)>=n)));
+ach('all','Buildings','Full kitchen','Own at least one of every building.',()=>B.every(b=>(S.own[b.id]||0)>0));
+[[1,'Shiny!'],[7,'Lucky seven'],[27,'Golden hoarder'],[77,'Midas touch']]
+ .forEach(([n,name],i)=>ach('gc'+i,'Golden',name,`Catch ${n} golden butterscotch${n>1?'es':''}.`,()=>S.golden>=n));
+[[10,'Tinkerer'],[25,'Upgraded'],[50,'Well equipped'],[100,'Fully loaded']]
+ .forEach(([n,name],i)=>ach('u'+i,'Upgrades',name,`Buy ${n} upgrades.`,()=>Object.keys(S.upg).length>=n));
+ach('m0','Melting','Meltdown','Melt down for the first time.',()=>S.melts>=1);
+[[10,'Crowned'],[100,'Candy royalty']].forEach(([n,name],i)=>ach('mc'+i,'Melting',name,`Own ${n} Caramel Crowns.`,()=>S.crowns>=n));
+[[1,'Open for business'],[10,'Regulars'],[50,'Famous shop'],[200,'Candy legend']].forEach(([n,name],i)=>ach('o'+i,'Orders',name,`Deliver ${n} customer order${n>1?'s':''}.`,()=>S.ordersDone>=n));
+ach('combo','Tapping','On fire','Reach a ×3 tap combo.',()=>comboMult()>=3);
+[[1,'Taffy time'],[10,'Strong arms'],[50,'Pull master']].forEach(([n,name],i)=>ach('p'+i,'Candy pull',name,`Finish ${n} candy pull${n>1?'s':''}.`,()=>S.pulls>=n));
+ach('perfect','Candy pull','Perfect pull','Score 10 out of 10 in candy pull.',()=>!!S.perfectPull);
+ach('perk1','Melting','Royal treatment','Buy a crown perk.',()=>Object.keys(S.perks).length>=1);
+[[1,'Curious cook'],[5,'Lab coat'],[10,'Candy scientist'],[18,'Professor of sweets']].forEach(([n,name],i)=>ach('rs'+i,'Research',name,`Finish ${n} research.`,()=>Object.keys(S.research||{}).length>=n));
+[[1,'Sweet day'],[3,'Habit forming'],[7,'Full week'],[30,'Candy calendar']].forEach(([n,name],i)=>ach('d'+i,'Daily',name,`Reach a ${n}-day daily treat streak.`,()=>S.streak>=n));
+[[1,'First drop'],[50,'Umbrella? Never'],[250,'Sugar storm chaser']].forEach(([n,name],i)=>ach('sr'+i,'Sugar rain',name,`Catch ${n} candies in sugar rain.`,()=>S.rainCaught>=n));
+[[1,'First trade'],[1e3,'Day trader'],[1e9,'Candy tycoon']].forEach(([n,name],i)=>ach('mk'+i,'Market',name,`Make ${fmtS(n)} profit in the candy market.`,()=>S.mktProfit>=n));
+if(EVENT){ach('ev1','Event',`${EVENT.name}: busy hands`,'Tap 500 times during the event.',()=>S.eventTaps>=500);
+  ach('ev2','Event',`${EVENT.name}: rain dance`,'Catch 30 sugar rain candies during the event.',()=>S.eventRain>=30);}
+ach('away','Melting','Slow cooker','Come back to candy made while you were away.',()=>awayFlag);
+
+/* ---------- news ---------- */
+const own=id=>S.own[id]||0;
+const NEWS=[
+ [()=>EVENT&&EVENT.id==='halloween','Kids in costumes demand butterscotch instead of candy corn. Candy corn offended.'],
+ [()=>EVENT&&EVENT.id==='halloween','Haunted house reports ghosts only want butterscotch.'],
+ [()=>EVENT&&EVENT.id==='winter','Snowmen spotted with butterscotch buttons.'],
+ [()=>EVENT&&EVENT.id==='valentine','Record number of butterscotch love notes sent this year.'],
+ [()=>S.streak>=3,'Local hero visits the candy shop every single day.'],
+ [()=>S.rainCaught,'Weather service adds "sugar rain" to its forecast options.'],
+ [()=>1,'Dentists across the country report a strange sense of dread.'],
+ [()=>1,'Study finds butterscotch is "basically a vegetable." Study was funded by butterscotch.'],
+ [()=>1,'Local candy shop reports a line around the block.'],
+ [()=>1,'Wrapper shortage feared as demand soars.'],
+ [()=>1,'Experts still unsure what the "scotch" in butterscotch means.'],
+ [()=>1,'Child trades homework for one (1) butterscotch. Calls it fair.'],
+ [()=>1,'Butterscotch named snack of the month. Again.'],
+ [()=>S.clicks>=50,"Doctors warn of a new condition: tapper's thumb."],
+ [()=>own('grandma'),'Grandmas refuse to share the recipe, citing "family secrets."'],
+ [()=>own('grandma')>=25,'Knitting circles now mostly stirring circles.'],
+ [()=>own('pot'),'Copper prices spike. Candy makers blamed.'],
+ [()=>own('churn'),'Cows report record overtime.'],
+ [()=>own('kitchen'),'Neighborhood smells of caramel permanently. Nobody is complaining.'],
+ [()=>own('factory'),'Toffee factory workers demand longer breaks, get candy instead.'],
+ [()=>own('mine'),'Miners strike it rich. It is butterscotch again.'],
+ [()=>own('river'),'Fishermen catch only toffee. Ducks confused.'],
+ [()=>own('bank'),'Economists warn of a sugar bubble, then eat it.'],
+ [()=>own('temple'),'Monks spend twelve hours a day unwrapping in silence.'],
+ [()=>own('tower'),'Wizard turns frog into butterscotch, refuses to turn it back.'],
+ [()=>own('rocket'),'Astronauts say the Moon now smells faintly of caramel.'],
+ [()=>own('lab'),'Alchemists finally turn lead into gold. Wish it was butterscotch.'],
+ [()=>own('portal'),'Tourists from the fudge dimension complain about the weather.'],
+ [()=>own('star'),'Astronomers name a new star "Sweetie". It is mostly toffee.'],
+ [()=>own('verse'),'Alternate you reports that their butterscotch is slightly better.'],
+ [()=>own('cloud'),'Weather report: 90% chance of butterscotch.'],
+ [()=>own('dragon'),'Dragons now prefer candy over gold. Knights relieved.'],
+ [()=>own('moon'),'Astronauts confirm: the Moon is not cheese after all.'],
+ [()=>own('hole'),'Scientists lose a spoon in the toffee black hole. Worth it.'],
+ [()=>own('brain'),'Giant candy brain solves math, asks for more sugar.'],
+ [()=>own('code'),'Programmers discover the universe has a candy bug. Refuse to fix it.'],
+ [()=>own('final'),'The Final Pot is complete. Nobody is hungry anymore.'],
+ [()=>own('time'),'Butterscotch found in dinosaur fossils. Historians blame you.'],
+ [()=>S.golden,'Witnesses confirm sightings of a shiny golden candy.'],
+ [()=>S.crowns,'Mysterious candy monarch spotted wearing a crown of caramel.'],
+ [()=>D.cps>=1e6,()=>`World butterscotch output passes ${fmtS(D.cps)} per second.`]
+];
+
+/* ---------- sound ---------- */
+let ac=null;
+function audio(){if(S.muted)return null;try{if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();}catch(e){return null;}return ac;}
+function tone(f,d,type,vol,when,slide){const a=audio();if(!a)return;const t=a.currentTime+(when||0);const o=a.createOscillator(),g=a.createGain();
+  o.type=type||'triangle';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(f*slide,t+d);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol||.07,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.03);}
+const sfx={
+  tap:()=>tone(440+Math.random()*180,.09,'sine',.09,0,1.7),
+  buy:()=>{tone(523,.08,'triangle',.06);tone(784,.14,'triangle',.06,.06);},
+  no:()=>tone(160,.12,'square',.025),
+  gold:()=>[659,784,988,1319].forEach((f,i)=>tone(f,.2,'triangle',.06,i*.07)),
+  ach:()=>[784,1047,1319].forEach((f,i)=>tone(f,.28,'sine',.05,i*.09))
+};
+
+/* ---------- derived numbers ---------- */
+function compute(){
+  const bm={};B.forEach(b=>bm[b.id]=1);
+  let cm=1,cp=0,fl=0,gf=1,gd=1,ge=1;
+  U.forEach(u=>{if(!S.upg[u.id])return;
+    if(u.kind==='b')bm[u.b]*=2;else if(u.kind==='c')cm*=2;else if(u.kind==='cp')cp+=.01;else if(u.kind==='f')fl+=u.pct;
+    else if(u.kind==='gf')gf=2;else if(u.kind==='gd')gd=2;else if(u.kind==='ge')ge=2;});
+  const achN=Object.keys(S.ach).length;
+  const g=(1+fl)*(1+.01*achN)*(1+.02*S.crowns)*(EVENT?1.1:1);
+  let base=0;const per={};
+  B.forEach(b=>{per[b.id]=b.cps*bm[b.id]*g;base+=per[b.id]*own(b.id);});
+  const now=Date.now();let cb=1,kb=1;
+  S.buffs.forEach(x=>{if(x.until>now){cb*=EFF[x.id].cps||1;kb*=EFF[x.id].click||1;}});
+  if(S.perks.oven)base*=1.25;
+  if(has('k1'))base*=1.1;if(has('k3'))base*=1.25;if(has('k5'))base*=1.5;if(has('k4'))base*=1+.01*own('grandma');
+  if(has('h1'))cm*=1.5;if(has('h5'))cm*=3;if(has('h3'))cp+=.01;
+  gf*=(has('l1')?1.2:1)*(has('l5')?2:1);gd*=has('l3')?1.5:1;ge*=has('l2')?1.5:1;
+  D={base,cps:base*cb,click:(cm*g+cp*base*cb)*kb,per,g,fl,achN,goldFreq:gf,goldDur:gd,effDur:ge,cb,kb};
+}
+const costOf=(b,n)=>Math.ceil((has('k2')?.95:1)*b.base*Math.pow(1.15,own(b.id))*(Math.pow(1.15,n)-1)/.15);
+function maxBuy(b){const c0=b.base*Math.pow(1.15,own(b.id));return Math.max(0,Math.floor(Math.log(S.bank*.15/c0+1)/Math.log(1.15)));}
+const amtFor=b=>S.amt==='max'?Math.max(1,maxBuy(b)):S.amt;
+function earn(n){S.bank+=n;S.earned+=n;S.allTime+=n;}
+const pendingCrowns=()=>Math.max(0,Math.floor(Math.cbrt(S.allTime/1e9))-S.crowns);
+
+/* ---------- DOM ---------- */
+const el={bank:$('bank'),bankLabel:$('bankLabel'),cps:$('cps'),cpc:$('cpc'),buffs:$('buffs'),stage:$('stage'),candy:$('candy'),empire:$('empire'),
+  shop:$('shop'),upgs:$('upgs'),ownedUpgs:$('ownedUpgs'),upgBadge:$('upgBadge'),upgCount:$('upgCount'),achBadge:$('achBadge'),achSub:$('achSub'),achBar:$('achBar'),achList:$('achList'),
+  stats:$('stats'),meltInfo:$('meltInfo'),meltBtn:$('meltBtn'),golden:$('golden'),toasts:$('toasts'),news:$('news'),mute:$('mute'),erase:$('erase')};
+function paintSkin(){const k=SKINS.find(x=>x.id===S.skin)||SKINS[0];$('candyArt').innerHTML=candySvg('mc',false,k.c);}
+el.golden.innerHTML=candySvg('gc',true);
+$('meltIcon').innerHTML=svg('crown');
+
+const rows={};
+B.forEach(b=>{
+  const btn=document.createElement('button');btn.type='button';btn.className='item';
+  btn.innerHTML=`<span class="ico" style="background:${b.hue}">${svg(b.icon||b.id)}</span><span class="info"><span class="name"></span><span class="cost"><span class="cdot"></span><span class="cv"></span></span><span class="meta"></span></span><span class="owned"></span>`;
+  btn.addEventListener('click',()=>buyBuilding(b));
+  el.shop.appendChild(btn);
+  rows[b.id]={btn,name:btn.querySelector('.name'),cost:btn.querySelector('.cost'),cv:btn.querySelector('.cv'),meta:btn.querySelector('.meta'),owned:btn.querySelector('.owned')};
+});
+
+function toast(icon,title,text){
+  const t=document.createElement('div');t.className='toast';
+  t.innerHTML=`<span class="tico">${svg(icon)}</span><div><b>${title}</b><span class="tt">${text}</span></div>`;
+  el.toasts.appendChild(t);while(el.toasts.children.length>4)el.toasts.firstChild.remove();
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),400);},4200);
+}
+function popAt(x,y,text){
+  const p=document.createElement('span');p.className='pop';p.textContent=text;
+  p.style.left=x+'px';p.style.top=y+'px';p.style.setProperty('--dx',rand(-40,40)+'px');
+  el.stage.appendChild(p);setTimeout(()=>p.remove(),1000);
+}
+
+/* ---------- actions ---------- */
+const tapTimes=[];
+el.candy.addEventListener('pointerdown',()=>el.candy.classList.add('press'));
+['pointerup','pointerleave','pointercancel'].forEach(e=>el.candy.addEventListener(e,()=>el.candy.classList.remove('press')));
+el.candy.addEventListener('click',e=>{
+  const tn=performance.now();while(tapTimes.length&&tn-tapTimes[0]>2000)tapTimes.shift();const v=D.click*comboMult();earn(v);S.clicks++;S.clickEarned+=v;if(EVENT)S.eventTaps++;
+  const r=el.stage.getBoundingClientRect();let x=e.clientX,y=e.clientY;
+  if(!x&&!y){x=r.left+r.width/2;y=r.top+r.height/2;}
+  popAt(x-r.left,y-r.top,'+'+fmtR(v));burst(x,y,9,false);sfx.tap();
+  const t=performance.now();tapTimes.push(t);while(tapTimes.length&&t-tapTimes[0]>2000)tapTimes.shift();if(tapTimes.length>=15)speedFlag=true;
+  render();
+});
+function buyBuilding(b){
+  const n=amtFor(b),c=costOf(b,n);
+  if(S.bank<c){sfx.no();return;}
+  S.bank-=c;S.own[b.id]=own(b.id)+n;S.bought+=n;sfx.buy();
+  const r=rows[b.id].btn.getBoundingClientRect();burst(r.left+40,r.top+r.height/2,10,false);
+  compute();render();
+}
+el.upgs.addEventListener('click',e=>{
+  const btn=e.target.closest('.upg');if(!btn)return;
+  const u=U.find(x=>x.id===btn.dataset.id);if(!u||S.upg[u.id])return;
+  if(S.bank<u.cost){sfx.no();return;}
+  S.bank-=u.cost;S.upg[u.id]=1;sfx.buy();
+  const r=btn.getBoundingClientRect();burst(r.left+30,r.top+30,14,true);
+  compute();render();
+});
+$('amt').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.amt=b.dataset.amt==='max'?'max':+b.dataset.amt;render();});
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>selectTab(t.dataset.tab)));
+function selectTab(id){
+  S.tab=id;
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===id)));
+  ['shop','upg','ach','res','stats'].forEach(p=>$('pane-'+p).hidden=p!==id);
+  render();
+}
+function paintMute(){el.mute.innerHTML=svg(S.muted?'mute':'sound');el.mute.setAttribute('aria-pressed',String(!S.muted));el.mute.setAttribute('aria-label',S.muted?'Sound is off':'Sound is on');}
+el.mute.addEventListener('click',()=>{S.muted=!S.muted;paintMute();if(!S.muted)sfx.buy();});
+
+/* Golden butterscotch */
+let gNext=Date.now()+rand(20,60)*1000,gUntil=0;
+function showGolden(){
+  const w=116,h=80;
+  el.golden.style.left=rand(16,Math.max(17,innerWidth-w-16))+'px';
+  el.golden.style.top=rand(90,Math.max(91,innerHeight-h-120))+'px';
+  el.golden.classList.remove('fade');el.golden.hidden=false;gUntil=Date.now()+13000*D.goldDur;
+}
+function hideGolden(){el.golden.hidden=true;gNext=Date.now()+rand(50,140)*1000/D.goldFreq/(S.perks.magnet?1.5:1);}
+el.golden.addEventListener('click',e=>{
+  const x=e.clientX||innerWidth/2,y=e.clientY||innerHeight/2;
+  hideGolden();S.golden++;gainCrystal(1,'a golden butterscotch');
+  const pool=Object.entries(EFF);let r=Math.random()*pool.reduce((a,[,v])=>a+v.w,0),id='lucky';
+  for(const [k,v] of pool){if((r-=v.w)<=0){id=k;break;}}
+  if(id==='lucky'){
+    const gain=(Math.min(S.bank*.15,D.base*900)+13)*(S.perks.charm?2:1)*(has('l4')?1.5:1);earn(gain);
+    toast('star','Lucky!',`+${fmt(gain)} butterscotches`);
+  }else{
+    const ef=EFF[id],d=Math.round(ef.dur*D.effDur);
+    S.buffs=S.buffs.filter(b=>b.id!==id);S.buffs.push({id,until:Date.now()+d*1000,dur:d});
+    toast('star',ef.name,`${ef.desc} for ${d} seconds`);
+  }
+  sfx.gold();burst(x,y,46,true);compute();render();
+});
+
+/* Melt + erase (two-step, in page) */
+let meltArmed=0,eraseArmed=0;
+el.meltBtn.addEventListener('click',()=>{
+  const p=pendingCrowns();if(p<1)return;
+  if(!meltArmed){meltArmed=setTimeout(()=>{meltArmed=0;render();},4000);el.meltBtn.textContent=`Tap again to melt for ${p} crown${p>1?'s':''}`;el.meltBtn.classList.add('danger');return;}
+  clearTimeout(meltArmed);meltArmed=0;el.meltBtn.classList.remove('danger');
+  const keep={allTime:S.allTime,ach:S.ach,crowns:S.crowns+p,crownBal:S.crownBal+p,perks:S.perks,crystals:S.crystals,research:S.research,lastDay:S.lastDay,streak:S.streak,rainCaught:S.rainCaught,eventTaps:S.eventTaps,eventRain:S.eventRain,mktProfit:S.mktProfit,pulls:S.pulls,melts:S.melts+1,clicks:S.clicks,clickEarned:S.clickEarned,golden:S.golden,firstStart:S.firstStart,muted:S.muted,amt:S.amt,tab:S.tab,skin:S.skin,ordersDone:S.ordersDone};
+  S=Object.assign(fresh(),keep);falling.length=0;resetKeys();compute();
+  if(S.perks.start)earn(1000*Math.pow(10,Math.min(12,S.crowns/5)));
+  toast('crown','Melted down',`You now have ${S.crowns} Caramel Crown${S.crowns>1?'s':''}.`);sfx.gold();burst(innerWidth/2,innerHeight/2,70,true);render();save();
+});
+el.erase.addEventListener('click',()=>{
+  if(!eraseArmed){eraseArmed=setTimeout(()=>{eraseArmed=0;el.erase.textContent='Erase all progress';el.erase.classList.remove('armed');},4000);
+    el.erase.textContent='Tap again to erase everything, including trophies';el.erase.classList.add('armed');return;}
+  clearTimeout(eraseArmed);eraseArmed=0;el.erase.textContent='Erase all progress';el.erase.classList.remove('armed');
+  const muted=S.muted;PULL.on=false;S=fresh();S.muted=muted;S.tab='stats';speedFlag=awayFlag=false;falling.length=0;resetKeys();compute();render();save();
+  toast('clock','Fresh start','All progress erased.');
+});
+
+/* ---------- rendering ---------- */
+let upgKey='',ownedKey='',achKey='',empireKey='';
+function resetKeys(){upgKey=ownedKey=achKey=empireKey='';}
+
+function render(){
+  const [num,word]=bankParts(S.bank);
+  el.bank.textContent=num;el.bankLabel.textContent=(word?word+' ':'')+'butterscotches';
+  el.cps.textContent=fmtR(D.cps);el.cps.classList.toggle('boost',D.cb>1);
+  el.cpc.textContent=fmtR(D.click);
+
+  // buffs
+  const now=Date.now();
+  el.buffs.innerHTML=S.buffs.filter(b=>b.until>now).map(b=>{const left=(b.until-now)/1000;
+    return `<div class="buff">${svg('star')}${EFF[b.id].name}<span>${Math.ceil(left)}s</span><i style="width:${Math.max(0,left/b.dur*100)}%"></i></div>`;}).join('');
+
+  // shop
+  document.querySelectorAll('#amt button').forEach(b=>b.setAttribute('aria-pressed',String(String(S.amt)===b.dataset.amt)));
+  let mystery=false;
+  B.forEach((b,i)=>{
+    const r=rows[b.id],o=own(b.id);
+    if(!S.revealed[b.id]&&(i===0||o>0||S.earned>=b.base*.4||own(B[i-1].id)>0))S.revealed[b.id]=1;
+    const rev=!!S.revealed[b.id];
+    if(!rev){if(mystery){r.btn.hidden=true;return;}mystery=true;}
+    r.btn.hidden=false;r.btn.classList.toggle('locked',!rev);
+    const n=amtFor(b),c=costOf(b,n);
+    r.name.textContent=rev?b.name:'???';
+    r.cv.textContent=(n>1?`${n} for `:'')+fmtS(c);
+    r.cost.classList.toggle('no',S.bank<c);
+    r.owned.textContent=o||'';
+    if(!rev)r.meta.textContent='Keep making butterscotch to discover this.';
+    else if(o>0){const share=D.base?Math.round(D.per[b.id]*o/D.base*100):0;r.meta.textContent=`${fmtR(D.per[b.id])}/s each · ${fmtR(D.per[b.id]*o)}/s total (${share}%)`;}
+    else r.meta.textContent=`${fmtR(D.per[b.id])}/s each · ${b.flav}`;
+    r.btn.disabled=!rev||S.bank<c;
+    r.btn.setAttribute('aria-label',rev?`Buy ${n} ${n>1?b.plural:b.name} for ${fmtS(c)}. You own ${o}.`:'Undiscovered building');
+  });
+
+  // upgrades
+  const avail=U.filter(u=>!S.upg[u.id]&&u.unlock()).sort((a,b)=>a.cost-b.cost);
+  const k=avail.map(u=>u.id).join();
+  if(k!==upgKey){upgKey=k;
+    el.upgs.innerHTML=avail.length?avail.map(u=>`<button type="button" class="upg" data-id="${u.id}"><span class="ico" style="background:${u.hue};border-color:${u.tier}">${svg(u.icon)}</span><span class="uinfo"><span class="uname">${u.name}</span><span class="udesc">${u.desc}</span><span class="cost"><span class="cdot"></span><span class="cv">${fmtS(u.cost)}</span></span></span></button>`).join('')
+      :'<div class="empty" style="grid-column:1/-1">New upgrades appear as you buy buildings and make more butterscotch.</div>';}
+  let afford=0;
+  el.upgs.querySelectorAll('.upg').forEach(btn=>{const u=U.find(x=>x.id===btn.dataset.id);const ok=S.bank>=u.cost;if(ok)afford++;btn.disabled=!ok;btn.querySelector('.cost').classList.toggle('no',!ok);});
+  el.upgBadge.hidden=!afford;el.upgBadge.textContent=afford;
+  const bought=U.filter(u=>S.upg[u.id]);
+  el.upgCount.textContent=`${bought.length} of ${U.length} bought`;
+  const ok2=bought.map(u=>u.id).join();
+  if(ok2!==ownedKey){ownedKey=ok2;
+    el.ownedUpgs.innerHTML=bought.length?bought.map(u=>`<span class="mini-ico" style="background:${u.hue};border-color:${u.tier}" title="${u.name}: ${u.desc}" aria-label="${u.name}">${svg(u.icon)}</span>`).join(''):'<span class="sub">Nothing yet.</span>';}
+
+  // trophies
+  const achN=Object.keys(S.ach).length;
+  el.achBadge.textContent=`${achN}/${A.length}`;
+  if(S.tab==='ach'){
+    const ak=Object.keys(S.ach).join();
+    if(ak!==achKey){achKey=ak;
+      el.achSub.textContent=`${achN} of ${A.length} · +${achN}% production`;
+      el.achBar.style.width=(achN/A.length*100)+'%';
+      const cats=[...new Set(A.map(a=>a.cat))];
+      el.achList.innerHTML=cats.map(c=>`<h3>${c}</h3><div class="agrid">${A.filter(a=>a.cat===c).map(a=>`<div class="ach${S.ach[a.id]?' got':''}"><span class="medal">${svg('trophy')}</span><span style="min-width:0"><span class="aname">${a.name}</span><span class="adesc">${a.desc}</span></span></div>`).join('')}</div>`).join('');}
+  }
+
+  // stats
+  if(S.tab==='stats'){
+    const p=pendingCrowns(),next=Math.pow(S.crowns+p+1,3)*1e9;
+    el.meltInfo.innerHTML=`You have <b>${S.crowns}</b> crown${S.crowns===1?'':'s'}. Melting now gives <b>${p}</b> more. Next crown at ${fmtS(next)} made all time.`;
+    el.meltBtn.disabled=p<1;
+    if(!meltArmed){el.meltBtn.textContent=p<1?'Melt down (needs 1 crown)':`Melt down for ${p} crown${p>1?'s':''}`;el.meltBtn.classList.remove('danger');}
+    const totalB=B.reduce((a,b)=>a+own(b.id),0);
+    const rowsS=[
+      ['In the bank',fmt(S.bank)],['Made this run',fmt(S.earned)],['Made all time',fmt(S.allTime)],
+      ['Per second',fmtR(D.cps)+(D.cb>1?` (base ${fmtR(D.base)})`:'')],['Per tap',fmtR(D.click)],
+      ['Taps',S.clicks.toLocaleString('en-US')],['Made by tapping',fmt(S.clickEarned)],['Golden butterscotches caught',S.golden],
+      ['Buildings owned',totalB.toLocaleString('en-US')],['Upgrades bought',`${bought.length} / ${U.length}`],
+      ['Trophy bonus',`+${achN}%`],['Flavor bonus',`+${Math.round(D.fl*100)}%`],['Crown bonus',`+${S.crowns*2}%`],
+      ['Orders delivered',S.ordersDone],['Candy pulls',S.pulls],['Daily streak',S.streak],['Sugar rain candies',S.rainCaught],['Market profit',fmt(S.mktProfit)],['Sugar crystals',S.crystals],['Research done',`${Object.keys(S.research).length} / ${RALL.length}`],['Meltdowns',S.melts],['This run',dur(Date.now()-S.runStart)],['Playing since',new Date(S.firstStart).toLocaleDateString()]
+    ];
+    el.stats.innerHTML=rowsS.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('');
+  }
+
+  // combo
+  const cm=comboMult();$('comboTxt').textContent=`Combo ×${cm.toFixed(1)}`;$('comboBar').style.width=((cm-1)/2*100)+'%';$('combo').classList.toggle('hot',cm>=2);
+
+  // daily, market
+  renderDaily();renderMarket();
+  // orders
+  renderOrders();renderRes();pullTick();
+  if(S.tab==='stats')renderPerks();
+
+  // skins
+  if(S.tab==='stats'){const n=Object.keys(S.ach).length;const sk=SKINS.map(k=>k.id+(n>=k.need)+(S.skin===k.id)).join();
+    if(sk!==skinKey){skinKey=sk;$('skins').innerHTML=SKINS.map(k=>`<button type="button" class="skin" data-skin="${k.id}" aria-pressed="${S.skin===k.id}" ${n<k.need?'disabled':''}><span class="sw" style="background:radial-gradient(circle at 35% 30%,${k.c[0]},${k.c[1]} 30%,${k.c[2]} 65%,${k.c[3]})"></span>${k.name}<small>${n>=k.need?(S.skin===k.id?'Using':'Use'):k.need+' trophies'}</small></button>`).join('');}}
+
+  // empire chips
+  const ek=B.map(b=>own(b.id)).join();
+  if(ek!==empireKey){empireKey=ek;
+    el.empire.innerHTML=B.filter(b=>own(b.id)>0).map(b=>`<span class="chip" title="${b.plural}"><span class="mini" style="background:${b.hue}">${svg(b.icon||b.id)}</span>${own(b.id)}</span>`).join('');}
+}
+
+/* ---------- crown perks ---------- */
+const PERKS=[
+ {id:'auto',name:'Little helper',desc:'Taps the candy 5 times a second for you.',cost:1},
+ {id:'oven',name:'Hotter ovens',desc:'Buildings make 25% more.',cost:2},
+ {id:'magnet',name:'Golden magnet',desc:'Golden butterscotches show up 50% more often.',cost:3},
+ {id:'charm',name:'Lucky charm',desc:'Lucky! rewards are doubled.',cost:4},
+ {id:'cozy',name:'Cozy kitchen',desc:'Earn 100% while away, for up to 24 hours.',cost:5},
+ {id:'start',name:'Head start',desc:'Start each new run with a pile of candy that grows with your crowns.',cost:8},
+ {id:'puller',name:'Master puller',desc:'Candy pull is ready twice as often and its sweet spot is wider.',cost:10}
+];
+let perkKey='';
+function renderPerks(){
+  $('perkNote').textContent=`You have ${S.crownBal} crown${S.crownBal===1?'':'s'} to spend. Spending crowns keeps their 2% bonus.`;
+  const k=S.crownBal+Object.keys(S.perks).join();if(k===perkKey)return;perkKey=k;
+  $('perks').innerHTML=PERKS.map(p=>{const have=S.perks[p.id];return `<button type="button" class="perk${have?' have':''}" data-perk="${p.id}" ${have||S.crownBal<p.cost?'disabled':''}><b>${p.name}</b><span>${p.desc}</span><em>${have?'Owned':p.cost+' crown'+(p.cost>1?'s':'')}</em></button>`;}).join('');
+}
+$('perks').addEventListener('click',e=>{const b=e.target.closest('[data-perk]');if(!b||b.disabled)return;const p=PERKS.find(x=>x.id===b.dataset.perk);
+  if(S.crownBal<p.cost||S.perks[p.id])return;S.crownBal-=p.cost;S.perks[p.id]=1;sfx.gold();toast('crown','Perk unlocked',p.name);compute();render();});
+
+/* ---------- candy pull mini-game ---------- */
+const PULL={on:false,round:0,res:[],t0:0,speed:1,zone:[0,0],sweet:[0,0]};
+function pullZone(){const w=(S.perks.puller?.26:.18)-PULL.round*.02,c=rand(.2+w/2,.8-w/2);PULL.zone=[c-w/2,c+w/2];const sw=w*.3;PULL.sweet=[c-sw/2,c+sw/2];
+  $('zone').style.left=PULL.zone[0]*100+'%';$('zone').style.width=w*100+'%';$('szone').style.left=PULL.sweet[0]*100+'%';$('szone').style.width=sw*100+'%';}
+function pullPos(){const t=(performance.now()-PULL.t0)/1000*PULL.speed;const x=t%2;return x<1?x:2-x;}
+function pullPips(){$('pips').querySelectorAll('i').forEach((el,i)=>el.className=PULL.res[i]||'');}
+function pullFrame(){if(!PULL.on)return;$('marker').style.left=pullPos()*100+'%';requestAnimationFrame(pullFrame);}
+function pullTick(){
+  const left=S.pullNext-Date.now(),btn=$('pullBtn');
+  if(PULL.on){btn.textContent='Pull!';btn.disabled=false;$('pullNote').textContent=`Round ${PULL.round+1} of 5`;return;}
+  btn.disabled=left>0;btn.textContent=left>0?`Ready in ${Math.ceil(left/1000)}s`:'Start pulling';
+  $('pullNote').textContent=left>0?'Candy is cooling':'Stop the marker in the zone';
+}
+$('pullBtn').addEventListener('click',()=>{
+  if(!PULL.on){if(S.pullNext>Date.now())return;PULL.on=true;PULL.round=0;PULL.res=[];PULL.speed=.7;PULL.t0=performance.now();pullZone();pullPips();pullFrame();pullTick();return;}
+  const x=pullPos();let r='miss';
+  if(x>=PULL.sweet[0]&&x<=PULL.sweet[1])r='sweet';else if(x>=PULL.zone[0]&&x<=PULL.zone[1])r='hit';
+  PULL.res.push(r);pullPips();r==='miss'?sfx.no():sfx.tap();
+  PULL.round++;
+  if(PULL.round>=5){PULL.on=false;S.pulls++;
+    const score=PULL.res.reduce((a,v)=>a+(v==='sweet'?2:v==='hit'?1:0),0);
+    const gain=Math.max(50,Math.max(D.base,1)*score*60);
+    if(score>=6)gainCrystal(1,'a great pull');
+    if(score){earn(gain);const r2=$('pull').getBoundingClientRect();burst(r2.left+r2.width/2,r2.top+20,12+score*4,score>=8);sfx.gold();}
+    toast('star',score>=10?'Perfect pull!':'Candy pulled',score?`Scored ${score}/10 and made ${fmt(gain)}.`:'The candy snapped. Try again soon.');
+    if(score>=10)S.perfectPull=1;
+    S.pullNext=Date.now()+(S.perks.puller?60:120)*(has('h4')?.5:1)*1000;pullTick();render();return;}
+  PULL.speed+=.25;PULL.t0=performance.now();pullZone();
+});
+
+/* ---------- daily treat ---------- */
+const dayKey=d=>d.toISOString().slice(0,10);
+function dailyState(){const today=dayKey(new Date()),yest=dayKey(new Date(Date.now()-864e5));
+  return {today,can:S.lastDay!==today,next:S.lastDay===yest?S.streak+1:1};}
+function renderDaily(){const d=dailyState();$('daily').hidden=!d.can;if(!d.can)return;
+  const day=((d.next-1)%7)+1;$('dailyNote').textContent=`Day ${d.next} streak`;
+  $('streak').innerHTML=Array.from({length:7},(_,i)=>`<i class="${i<day?'on':''}"></i>`).join('');
+  $('dailyBtn').textContent=`Claim ${fmtS(dailyReward(d.next))}${day===7?' + 3 crystals':''}`;}
+const dailyReward=n=>Math.max(500,Math.max(D.base,1)*600)*Math.min(((n-1)%7)+1,7);
+$('dailyBtn').addEventListener('click',()=>{const d=dailyState();if(!d.can)return;const gain=dailyReward(d.next);
+  S.streak=d.next;S.lastDay=d.today;earn(gain);if(((d.next-1)%7)+1===7){S.crystals+=3;}
+  const r=$('dailyBtn').getBoundingClientRect();burst(r.left+r.width/2,r.top,40,true);sfx.gold();
+  toast('star','Daily treat',`Day ${S.streak}: +${fmt(gain)}${((d.next-1)%7)+1===7?' and 3 sugar crystals':''}. Come back tomorrow.`);render();});
+
+/* ---------- event banner ---------- */
+if(EVENT){$('eventBanner').hidden=false;$('eventName').textContent=EVENT.name;$('eventDesc').textContent=EVENT.desc;}
+
+/* ---------- sugar rain ---------- */
+let rainUntil=0,rainNext=Date.now()+rand(90,240)*1000,rainCount=0,rainNote=null;
+const dropSvg=candySvg('dr',false);
+function startRain(){rainUntil=Date.now()+12000;rainCount=0;
+  rainNote=document.createElement('div');rainNote.className='rain-note';rainNote.textContent='Sugar rain! Tap the falling candies';document.body.appendChild(rainNote);sfx.gold();}
+function spawnDrop(){const b=document.createElement('button');b.type='button';b.className='drop';b.setAttribute('aria-label','Catch candy');
+  b.innerHTML=dropSvg;b.style.left=rand(8,Math.max(9,innerWidth-64))+'px';b.style.animationDuration=rand(2.6,4.2)+'s';b.style.setProperty('--rot',rand(-360,360)+'deg');
+  b.addEventListener('click',e=>{const v=Math.max(D.base*8,D.click*3,5);earn(v);S.rainCaught++;rainCount++;if(EVENT)S.eventRain++;
+    burst(e.clientX||innerWidth/2,e.clientY||innerHeight/2,12,true);sfx.tap();b.remove();});
+  b.addEventListener('animationend',()=>b.remove());document.body.appendChild(b);}
+function rainTick(now){
+  if(rainUntil){if(now<rainUntil){if(Math.random()<.35)spawnDrop();}
+    else{rainUntil=0;if(rainNote)rainNote.remove();toast('star','Sugar rain over',`You caught ${rainCount} cand${rainCount===1?'y':'ies'}.`);rainNext=now+rand(240,480)*1000;}}
+  else if(now>rainNext&&!document.hidden)startRain();
+}
+
+/* ---------- candy market ---------- */
+const GOODS=[{id:'toffee',name:'Toffee',base:30},{id:'fudge',name:'Fudge',base:60},{id:'caramel',name:'Caramel',base:120}];
+const M={};GOODS.forEach(g=>M[g.id]={p:g.base*rand(.6,1.4),last:0});let mktKey='';
+const unit=()=>Math.max(D.base,1);
+const price=g=>M[g.id].p*unit();
+function mktStep(){GOODS.forEach(g=>{const m=M[g.id];m.last=m.p;const drift=(g.base-m.p)*.08;m.p=Math.max(g.base*.2,Math.min(g.base*3,m.p+drift+m.p*rand(-.18,.18)));});mktKey='';}
+function renderMarket(){
+  const k=GOODS.map(g=>M[g.id].p.toFixed(2)+(S.mkt[g.id]?S.mkt[g.id].q:0)).join()+Math.floor(S.bank/Math.max(1,price(GOODS[0])));
+  if(k===mktKey)return;mktKey=k;
+  $('mkt').innerHTML=GOODS.map(g=>{const m=M[g.id],h=S.mkt[g.id]||{q:0,paid:0},pr=price(g),dir=m.p>=m.last?'up':'down';
+    const hold=h.q?` · own ${h.q} (paid ${fmtS(h.paid/h.q)} each)`:'';
+    return `<div><div class="nm">${g.name} <span class="${dir}">${dir==='up'?'▲':'▼'}</span></div><div class="pr">${fmtS(pr)} each${hold}</div></div>
+      <button class="sbtn" type="button" data-buy="${g.id}" ${S.bank<pr||h.q>=100?'disabled':''}>Buy</button>
+      <button class="sbtn" type="button" data-sell="${g.id}" ${h.q?'':'disabled'}>Sell all</button>`;}).join('');
+}
+$('mkt').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
+  const id=b.dataset.buy||b.dataset.sell,g=GOODS.find(x=>x.id===id),pr=price(g),h=S.mkt[id]||(S.mkt[id]={q:0,paid:0});
+  if(b.dataset.buy){if(S.bank<pr||h.q>=100)return;S.bank-=pr;h.q++;h.paid+=pr;sfx.buy();}
+  else{const val=pr*h.q,profit=val-h.paid;earn(val);S.earned-=val;S.allTime-=val;S.bank+=0;
+    if(profit>0){S.earned+=profit;S.allTime+=profit;S.mktProfit+=profit;}
+    toast('star',profit>=0?'Sold for a profit':'Sold at a loss',`${h.q} ${g.name}: ${profit>=0?'+':'-'}${fmtS(Math.abs(profit))}`);h.q=0;h.paid=0;profit>0?sfx.gold():sfx.no();}
+  mktKey='';render();});
+
+/* ---------- research ---------- */
+function has(id){return !!(S.research&&S.research[id]);}
+const RES=[
+ {br:'Kitchen',items:[
+  {id:'k1',name:'Better stirring',desc:'Buildings make 10% more.',cost:1},
+  {id:'k2',name:'Bulk buying',desc:'Buildings cost 5% less.',cost:2,req:'k1'},
+  {id:'k3',name:'Hotter sugar',desc:'Buildings make 25% more.',cost:4,req:'k2'},
+  {id:'k4',name:"Grandma's wisdom",desc:'Each grandma adds 1% to all production.',cost:6,req:'k3'},
+  {id:'k5',name:'Perfect recipe',desc:'Buildings make 50% more.',cost:10,req:'k4'}]},
+ {br:'Luck',items:[
+  {id:'l1',name:'Shiny eyes',desc:'Golden butterscotches show up 20% more often.',cost:1},
+  {id:'l2',name:'Long frenzy',desc:'Golden effects last 50% longer.',cost:2,req:'l1'},
+  {id:'l3',name:'Slow sparkle',desc:'Golden butterscotches stay 50% longer.',cost:3,req:'l2'},
+  {id:'l4',name:'Fortune cookie',desc:'Lucky! rewards are 50% bigger.',cost:5,req:'l3'},
+  {id:'l5',name:'Golden age',desc:'Golden butterscotches show up twice as often.',cost:10,req:'l4'}]},
+ {br:'Hands',items:[
+  {id:'h1',name:'Warm-up stretches',desc:'Taps are 50% stronger.',cost:1},
+  {id:'h2',name:'Rhythm',desc:'Tap combo goes up to ×4.',cost:3,req:'h1'},
+  {id:'h3',name:'Sticky touch',desc:'Each tap adds 1% more of your per-second rate.',cost:4,req:'h2'},
+  {id:'h4',name:'Quick cooling',desc:'Candy pull is ready twice as fast.',cost:5,req:'h3'},
+  {id:'h5',name:'Legendary hands',desc:'Taps are 3× stronger.',cost:8,req:'h4'}]},
+ {br:'Shop',items:[
+  {id:'o1',name:'Friendly service',desc:'Orders pay 50% more.',cost:1},
+  {id:'o2',name:'Extra counter',desc:'Take 4 customer orders at once.',cost:3,req:'o1'},
+  {id:'o3',name:'Famous shop',desc:'Orders pay double.',cost:6,req:'o2'}]}
+];
+const RALL=RES.flatMap(b=>b.items);
+function gainCrystal(n,why){S.crystals=(S.crystals||0)+n;toast('star',`+${n} sugar crystal`,`From ${why}. Spend it in Research.`);}
+let resKey='';
+function renderRes(){
+  const ready=RALL.filter(r=>!has(r.id)&&(!r.req||has(r.req))&&S.crystals>=r.cost).length;
+  $('resBadge').hidden=!ready;$('resBadge').textContent=ready;
+  if(S.tab!=='res')return;
+  $('crysN').textContent=S.crystals;
+  const k=S.crystals+Object.keys(S.research).join();if(k===resKey)return;resKey=k;
+  $('resList').innerHTML=RES.map(b=>`<h3>${b.br}</h3><div class="rgrid">${b.items.map(r=>{const got=has(r.id),open=!r.req||has(r.req);
+    const st=got?'Researched':!open?`Needs ${RALL.find(x=>x.id===r.req).name}`:`${r.cost} crystal${r.cost>1?'s':''}`;
+    return `<button type="button" class="node${got?' have':''}${open?'':' locked'}" data-res="${r.id}" ${got||!open||S.crystals<r.cost?'disabled':''}><b>${r.name}</b><span>${r.desc}</span><em>${st}</em></button>`;}).join('')}</div>`).join('');
+}
+$('resList').addEventListener('click',e=>{const b=e.target.closest('[data-res]');if(!b||b.disabled)return;const r=RALL.find(x=>x.id===b.dataset.res);
+  if(has(r.id)||S.crystals<r.cost||(r.req&&!has(r.req)))return;S.crystals-=r.cost;S.research[r.id]=1;sfx.gold();
+  const rr=b.getBoundingClientRect();burst(rr.left+rr.width/2,rr.top+rr.height/2,20,true);toast('star','Researched',r.name);compute();render();});
+
+/* ---------- combo ---------- */
+function comboMult(){const t=performance.now();const n=tapTimes.filter(x=>t-x<2000).length;return 1+Math.min(n,has('h2')?45:30)/15;}
+
+/* ---------- customer orders ---------- */
+let skinKey='',ordersKey='';
+$('skins').addEventListener('click',e=>{const b=e.target.closest('.skin');if(!b||b.disabled)return;S.skin=b.dataset.skin;skinKey='';paintSkin();sfx.buy();render();});
+const NAMES=['Mrs. Toffington','A very small child','The mayor','A sleepy dentist','Grandma Marge','A pirate captain','The candy critic','A confused tourist','Two twins','The night baker'];
+function newOrder(){
+  const pick=Math.floor(Math.random()*4),who=NAMES[Math.floor(Math.random()*NAMES.length)],rate=Math.max(D.base,1);
+  if(pick===0){const n=[25,50,100,200][Math.floor(Math.random()*4)];return {who,type:'tap',start:S.clicks,need:n,text:`Tap the candy ${n} times`,reward:Math.max(60,rate*240)};}
+  if(pick===1){const n=Math.max(100,Math.round(rate*rand(90,240)));return {who,type:'earn',start:S.earned,need:n,text:`Make ${fmtS(n)} butterscotches`,reward:Math.max(80,rate*300)};}
+  if(pick===2){const n=[3,5,10,20][Math.floor(Math.random()*4)];return {who,type:'buy',start:S.bought,need:n,text:`Buy ${n} buildings`,reward:Math.max(120,rate*360)};}
+  return {who,type:'gold',start:S.golden,need:1,text:'Catch a golden butterscotch',reward:Math.max(200,rate*600)};
+}
+function orderProg(o){const cur={tap:S.clicks,earn:S.earned,buy:S.bought,gold:S.golden}[o.type]-o.start;return Math.max(0,Math.min(1,cur/o.need));}
+function renderOrders(){
+  while(S.orders.length<(has('o2')?4:3))S.orders.push(newOrder());
+  const k=S.orders.map(o=>o.text+(orderProg(o)>=1)).join();
+  if(k!==ordersKey){ordersKey=k;
+    $('orders').innerHTML=S.orders.map((o,i)=>{const done=orderProg(o)>=1;return `<div class="order${done?' done':''}"><div><div class="od">${o.text}</div><div class="orw">${o.who} pays ${fmtS(o.reward)}</div></div>${done?`<button class="btn" type="button" data-claim="${i}">Claim</button>`:'<span class="orw" data-pct></span>'}<div class="bar"><i></i></div></div>`;}).join('');}
+  $('orders').querySelectorAll('.order').forEach((el,i)=>{const p=orderProg(S.orders[i]);el.querySelector('.bar i').style.width=(p*100)+'%';const t=el.querySelector('[data-pct]');if(t)t.textContent=Math.floor(p*100)+'%';});
+}
+$('orders').addEventListener('click',e=>{const b=e.target.closest('[data-claim]');if(!b)return;const i=+b.dataset.claim,o=S.orders[i];if(!o||orderProg(o)<1)return;
+  const pay=o.reward*(has('o1')?1.5:1)*(has('o3')?2:1);earn(pay);gainCrystal(1,'an order');S.ordersDone++;S.orders[i]=newOrder();ordersKey='';const r=b.getBoundingClientRect();burst(r.left+r.width/2,r.top,24,true);sfx.gold();
+  toast('star','Order delivered',`${o.who} paid ${fmt(pay)}.`);render();});
+
+/* ---------- trophies check ---------- */
+function checkAch(){
+  const got=[];
+  for(const a of A)if(!S.ach[a.id]&&a.test()){S.ach[a.id]=Date.now();got.push(a);}
+  if(!got.length)return;
+  if(got.length>3)toast('trophy','Trophies unlocked',`${got.length} new trophies. Each adds 1% to production.`);
+  else got.forEach(a=>toast('trophy','Trophy unlocked',`${a.name} · ${a.desc}`));
+  sfx.ach();compute();
+}
+
+/* ---------- news ---------- */
+let lastNews='';
+function nextNews(){
+  const pool=NEWS.filter(n=>n[0]()).map(n=>typeof n[1]==='function'?n[1]():n[1]);
+  let t;do{t=pool[Math.floor(Math.random()*pool.length)];}while(t===lastNews&&pool.length>1);
+  lastNews=t;el.news.textContent=t;el.news.title=t;el.news.classList.remove('in');void el.news.offsetWidth;el.news.classList.add('in');
+}
+
+/* ---------- effects canvases ---------- */
+const bg=$('bg'),fx=$('fx'),bctx=bg.getContext('2d'),fctx=fx.getContext('2d');
+let W=0,H=0;
+function size(){const dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+  [bg,fx].forEach(c=>{c.width=W*dpr;c.height=H*dpr;});bctx.setTransform(dpr,0,0,dpr,0,0);fctx.setTransform(dpr,0,0,dpr,0,0);}
+addEventListener('resize',size);size();
+const sprite=(()=>{const c=document.createElement('canvas');c.width=72;c.height=44;const g=c.getContext('2d');
+  g.fillStyle='rgba(246,231,200,.9)';
+  g.beginPath();g.moveTo(26,22);g.lineTo(4,7);g.lineTo(9,22);g.lineTo(4,37);g.closePath();g.fill();
+  g.beginPath();g.moveTo(46,22);g.lineTo(68,7);g.lineTo(63,22);g.lineTo(68,37);g.closePath();g.fill();
+  const rg=g.createRadialGradient(31,16,1,36,22,15);rg.addColorStop(0,'#FFE9A8');rg.addColorStop(.4,'#F5A73A');rg.addColorStop(1,'#8A430A');
+  g.fillStyle=rg;g.beginPath();g.ellipse(36,22,14,13,0,0,Math.PI*2);g.fill();
+  g.fillStyle='rgba(255,255,255,.65)';g.beginPath();g.ellipse(31,16,4,2.2,-.5,0,Math.PI*2);g.fill();return c;})();
+const falling=[],shards=[];let fallAcc=0,lastF=0;
+function burst(x,y,n,gold){if(reduce)return;
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=rand(2,gold?8:5.5);
+    shards.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2.5,life:1,rot:Math.random()*6,vr:rand(-.3,.3),size:rand(3,gold?9:7),
+      c:gold?(Math.random()<.5?'#FFF3B0':'#FFD24A'):(Math.random()<.5?'#FFC05A':'#E3801A')});}
+  if(shards.length>400)shards.splice(0,shards.length-400);}
+function loop(t){
+  const dt=Math.min(.05,(t-(lastF||t))/1000),k=dt*60;lastF=t;
+  if(!reduce){fallAcc+=dt*Math.min(5,Math.log10(D.cps+1)*.85);
+    while(fallAcc>=1){fallAcc--;falling.push({x:Math.random()*W,y:-40,vy:rand(40,110),rot:Math.random()*6,vr:rand(-1.5,1.5),s:rand(.45,1.05)});}
+    if(falling.length>90)falling.splice(0,falling.length-90);}
+  bctx.clearRect(0,0,W,H);bctx.globalAlpha=.3;
+  for(let i=falling.length-1;i>=0;i--){const p=falling[i];p.y+=p.vy*dt;p.rot+=p.vr*dt;
+    if(p.y>H+40){falling.splice(i,1);continue;}
+    bctx.save();bctx.translate(p.x,p.y);bctx.rotate(p.rot);bctx.scale(p.s,p.s);bctx.drawImage(sprite,-36,-22);bctx.restore();}
+  bctx.globalAlpha=1;
+  fctx.clearRect(0,0,W,H);
+  for(let i=shards.length-1;i>=0;i--){const p=shards[i];p.x+=p.vx*k;p.y+=p.vy*k;p.vy+=.35*k;p.vx*=Math.pow(.98,k);p.life-=dt*1.3;p.rot+=p.vr*k;
+    if(p.life<=0||p.y>H+20){shards.splice(i,1);continue;}
+    fctx.globalAlpha=Math.max(0,p.life);fctx.fillStyle=p.c;fctx.save();fctx.translate(p.x,p.y);fctx.rotate(p.rot);
+    fctx.beginPath();fctx.ellipse(0,0,p.size/2,p.size/3.2,0,0,Math.PI*2);fctx.fill();fctx.restore();}
+  fctx.globalAlpha=1;
+  requestAnimationFrame(loop);
+}
+
+/* ---------- save / load ---------- */
+function save(){S.saved=Date.now();try{localStorage.setItem('bsc2',JSON.stringify(S));}catch(e){}cloudSave();}
+
+/* ---------- accounts: Google sign-in through Firebase ---------- */
+const FB={ok:false,auth:null,db:null};
+try{
+  const cfg=window.FIREBASE_CONFIG;
+  if(window.firebase&&cfg&&cfg.apiKey&&cfg.apiKey.indexOf('PASTE')<0){
+    firebase.initializeApp(cfg);FB.auth=firebase.auth();FB.db=firebase.firestore();FB.ok=true;
+  }
+}catch(e){FB.ok=false;}
+const AC={signed:false,id:null,me:null,cloud:null,lastCloud:0,ready:false};
+const LB={rows:[],unsub:null,lastPost:0,key:''};
+const safeUrl=u=>typeof u==='string'&&/^https:\/\//.test(u)?u:'';
+
+function cloudSave(force){
+  if(!AC.signed||!FB.ok)return;
+  lbPost(force);
+  const now=Date.now();if(!force&&now-AC.lastCloud<20000)return;AC.lastCloud=now;
+  FB.db.collection('saves').doc(AC.id).set({state:JSON.stringify(S),allTime:S.allTime,at:now}).catch(()=>{});
+}
+function lbPost(force){
+  if(!AC.signed||!FB.ok)return;
+  const now=Date.now();if(!force&&now-LB.lastPost<30000)return;LB.lastPost=now;
+  FB.db.collection('leaderboard').doc(AC.id).set({
+    name:(AC.me.name||'Candy maker').slice(0,40),photo:safeUrl(AC.me.avatarUrl).slice(0,500),
+    allTime:Math.floor(S.allTime),cps:Math.floor(D.base),crowns:S.crowns,trophies:Object.keys(S.ach).length,at:now
+  }).catch(()=>{});
+}
+function lbListen(){
+  if(LB.unsub||!FB.ok)return;
+  LB.unsub=FB.db.collection('leaderboard').orderBy('allTime','desc').limit(25).onSnapshot(
+    snap=>{LB.rows=snap.docs.map(d=>Object.assign({id:d.id},d.data()));LB.key='';renderLB();},
+    ()=>{$('lb').innerHTML='<div class="empty">The leaderboard is not available right now.</div>';});
+}
+function renderLB(){
+  const box=$('lb');if(!box)return;
+  $('lbNote').textContent=!FB.ok?'':AC.signed?'You are on the board. Your score updates every 30 seconds.':'Sign in with Google (tap Guest at the top) to put your score on the board.';
+  if(!FB.ok){box.innerHTML='<div class="empty">The leaderboard turns on once Firebase is set up.</div>';return;}
+  const k=LB.rows.map(r=>r.id+r.allTime+r.name).join()+AC.id;if(k===LB.key)return;LB.key=k;
+  if(!LB.rows.length){box.innerHTML='<div class="empty">No scores yet. Sign in and be the first.</div>';return;}
+  box.innerHTML='';
+  LB.rows.forEach((r,i)=>{
+    const row=document.createElement('div');row.className='lbrow'+(r.id===AC.id?' me':'');
+    const rk=document.createElement('span');rk.className='rk';rk.textContent=i+1;
+    const im=document.createElement('img');im.alt='';im.referrerPolicy='no-referrer';const ph=safeUrl(r.photo);if(ph)im.src=ph;
+    const nm=document.createElement('span');nm.className='nm';nm.textContent=String(r.name||'Candy maker').slice(0,40)+(r.id===AC.id?' (you)':'');
+    const sc=document.createElement('span');sc.className='sc';sc.textContent=fmtS(+r.allTime||0);
+    const sm=document.createElement('small');sm.textContent=`${fmtS(+r.cps||0)}/s · ${+r.crowns||0} crowns`;sc.append(sm);
+    row.append(rk,im,nm,sc);box.append(row);
+  });
+}
+setInterval(()=>{lbPost();if(S.tab==='stats')renderLB();},3000);
+
+function paintAcct(){
+  const img=$('acctImg'),nm=$('acctName'),sub=$('acctSub');
+  if(AC.signed&&AC.me){const ph=safeUrl(AC.me.avatarUrl);img.referrerPolicy='no-referrer';if(ph)img.src=ph;img.hidden=!ph;nm.textContent=AC.me.name||'Signed in';sub.textContent='Cloud save on';}
+  else{img.hidden=true;nm.textContent='Guest';sub.textContent=FB.ok?'Sign in with Google':'Saves on this device';}
+}
+function openSignin(){
+  $('signin').hidden=false;
+  const me=$('siMe');me.innerHTML='';
+  if(AC.signed&&AC.me){const im=document.createElement('img');im.alt='';im.referrerPolicy='no-referrer';const ph=safeUrl(AC.me.avatarUrl);if(ph)im.src=ph;const sp=document.createElement('span');sp.textContent=AC.me.name||'Your Google account';me.append(im,sp);}
+  $('siTitle').textContent=AC.signed?'Your account':'Sign in';
+  $('siText').textContent=!FB.ok?'Google sign-in is not set up yet. Your progress saves on this device.'
+    :AC.signed?'You are signed in with Google. Your progress saves to your account and your score is on the leaderboard.'
+    :'Sign in with Google to save your butterscotch to the cloud, play on any device and join the leaderboard.';
+  $('siGo').hidden=!FB.ok||AC.signed;
+  const canLoad=AC.signed&&AC.cloud&&AC.cloud.allTime>S.allTime;
+  $('siLoad').hidden=!canLoad;
+  if(canLoad)$('siLoad').textContent=`Load my cloud save (${fmtS(AC.cloud.allTime)} made)`;
+  $('siGuest').textContent=AC.signed?'Sign out':'Play as guest';
+  (FB.ok&&!AC.signed?$('siGo'):$('siGuest')).focus();
+}
+function closeSignin(){$('signin').hidden=true;}
+$('acct').addEventListener('click',openSignin);
+$('signin').addEventListener('click',e=>{if(e.target.id==='signin')closeSignin();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('signin').hidden)closeSignin();});
+const AUTH_ERR={
+  'auth/unauthorized-domain':"This website isn't on the Firebase project's authorized domains list yet.",
+  'auth/operation-not-allowed':'Google sign-in is turned off in the Firebase project.',
+  'auth/network-request-failed':'No connection. Check your internet and try again.'
+};
+$('siGo').addEventListener('click',async()=>{
+  if(!FB.ok)return;
+  const provider=new firebase.auth.GoogleAuthProvider();
+  try{await FB.auth.signInWithPopup(provider);}
+  catch(e){
+    if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment')){FB.auth.signInWithRedirect(provider);return;}
+    if(e&&(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'))return;
+    toast('clock','Sign-in failed',(e&&AUTH_ERR[e.code])||'Something went wrong. Try again.');
+  }
+});
+$('siLoad').addEventListener('click',()=>{
+  try{const o=JSON.parse(AC.cloud.state);S=Object.assign(fresh(),o);resetKeys();compute();paintSkin();paintMute();selectTab(S.tab||'shop');save();
+    closeSignin();toast('star','Cloud save loaded',`${fmt(S.bank)} butterscotches in the bank.`);}
+  catch(e){toast('clock','Could not load',"That cloud save couldn't be read.");}
+});
+$('siGuest').addEventListener('click',()=>{
+  if(AC.signed&&FB.ok){cloudSave(true);FB.auth.signOut();toast('clock','Signed out','Progress now saves on this device only.');}
+  closeSignin();
+});
+paintAcct();
+if(FB.ok){
+  lbListen();
+  FB.auth.getRedirectResult().catch(e=>{if(e&&AUTH_ERR[e.code])toast('clock','Sign-in failed',AUTH_ERR[e.code]);});
+  FB.auth.onAuthStateChanged(async u=>{
+    const first=!AC.ready;AC.ready=true;
+    if(u){
+      const was=AC.signed;
+      AC.signed=true;AC.id=u.uid;AC.me={name:u.displayName||'',avatarUrl:u.photoURL||''};
+      try{const snap=await FB.db.collection('saves').doc(u.uid).get();AC.cloud=snap.exists?snap.data():null;}catch(e){AC.cloud=null;}
+      paintAcct();LB.key='';renderLB();
+      if(AC.cloud&&AC.cloud.allTime>S.allTime){openSignin();toast('star','Cloud save found','Your account has more progress. Tap Load to use it.');}
+      else{cloudSave(true);if(!$('signin').hidden)closeSignin();if(!was&&!first)toast('star','Signed in',`Welcome${AC.me.name?', '+AC.me.name:''}! Cloud save is on.`);}
+    }else{
+      AC.signed=false;AC.id=null;AC.me=null;AC.cloud=null;paintAcct();LB.key='';renderLB();
+      if(first){let seen=false;try{seen=localStorage.getItem('bsc_prompted_g')==='1';localStorage.setItem('bsc_prompted_g','1');}catch(e){}if(!seen)openSignin();}
+    }
+  });
+}
+
+function load(){
+  try{
+    const raw=localStorage.getItem('bsc2');
+    if(raw){const o=JSON.parse(raw);S=Object.assign(fresh(),o);if(o.crownBal==null)S.crownBal=S.crowns;return true;}
+    const old=JSON.parse(localStorage.getItem('bsc')||'null');
+    if(old){S.bank=old.n||0;S.earned=S.allTime=S.bank;
+      const map={stirrer:'grandma',pot:'pot',churn:'churn',kitchen:'kitchen',factory:'factory',mine:'mine'};
+      for(const k in (old.own||{}))if(map[k])S.own[map[k]]=old.own[k];
+      return true;}
+  }catch(e){}
+  return false;
+}
+
+/* ---------- boot ---------- */
+let started=false,autoAcc=0;
+function boot(data){
+  if(started)return;started=true;
+  let had;
+  if(data&&data.S){S=Object.assign(fresh(),data.S);had=false;}else had=load();
+  compute();
+  if(had){
+    const secs=Math.min((Date.now()-S.saved)/1000,(S.perks.cozy?24:8)*3600);
+    if(secs>30&&D.base>0){const gain=D.base*secs*(S.perks.cozy?1:.5);earn(gain);awayFlag=true;
+      setTimeout(()=>toast('clock','Welcome back',`Your kitchen made ${fmt(gain)} while you were away.`),600);}
+  }
+  paintSkin();paintMute();selectTab(S.tab||'shop');nextNews();
+  setInterval(nextNews,9000);
+  let last=performance.now();
+  setInterval(()=>{
+    const t=performance.now(),dt=(t-last)/1000;last=t;const now=Date.now();
+    S.buffs=S.buffs.filter(b=>b.until>now);
+    compute();earn(D.cps*dt);
+    if(S.perks.auto){autoAcc+=dt*5;while(autoAcc>=1){autoAcc--;const v=D.click;earn(v);S.clickEarned+=v;}}
+    if(!el.golden.hidden){if(now>gUntil)hideGolden();else el.golden.classList.toggle('fade',now>gUntil-1800);}
+    else if(now>gNext&&!document.hidden)showGolden();
+    rainTick(now);if(now-(window.__mk||0)>10000){window.__mk=now;mktStep();}
+    checkAch();render();
+  },100);
+  setInterval(save,5000);
+  addEventListener('pagehide',save);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
+  requestAnimationFrame(loop);
+}
+const hot=window.claude&&window.claude.hot;
+if(hot&&typeof hot.snapshot==='function')hot.snapshot(()=>({S}));
+if(hot&&typeof hot.ready==='function')hot.ready(boot);else boot((hot&&hot.data)||{});
+})();
+</script>
+</body>
+</html>
