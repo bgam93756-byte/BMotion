@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Each player's full game save: only that player can read or write it.
+    match /saves/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['state', 'allTime', 'at']);
+    }
+
+    // Public leaderboard: anyone can read, each player writes only their own row.
+    match /leaderboard/{uid} {
+      allow read: if true;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'photo', 'allTime', 'cps', 'crowns', 'trophies', 'at'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && request.resource.data.photo is string && request.resource.data.photo.size() <= 500
+        && request.resource.data.allTime is number && request.resource.data.allTime >= 0
+        && request.resource.data.cps is number && request.resource.data.crowns is number
+        && request.resource.data.trophies is number && request.resource.data.at is number;
+    }
+  }
+}
