@@ -348,6 +348,9 @@ body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webki
 input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 /* iOS zooms in on any text box smaller than 16px when it's focused */
 .set-row select,.set-row input:not([type=range]),.set-row textarea{font-size:16px}
+.admbtn{flex-shrink:0;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--bad);background:rgba(240,138,110,.14);color:var(--fg);font-weight:800;font-size:14px;cursor:pointer}
+.admbtn:hover{background:rgba(240,138,110,.28)}
+.admbtn:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
 .agrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .agrid2 .btn{min-height:44px;font-size:14px;padding:0 10px}
 .adm-warn{margin:0;padding:10px 12px;border-radius:12px;background:rgba(240,138,110,.12);border:1px solid var(--bad);font-size:14px;color:var(--fg)}
@@ -362,6 +365,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
     <h1 class="brand" id="brand">Butterscotch Clicker</h1>
     <div class="news" aria-label="Candy news"><span class="tag">News</span><span id="news"></span></div>
     <button class="acct" id="acct" type="button" aria-haspopup="dialog"><img id="acctImg" alt=""><span><span class="an" id="acctName">Guest</span><span class="as" id="acctSub">Sign in</span></span></button>
+    <button class="admbtn" id="admBtn" type="button" aria-haspopup="dialog">Admin</button>
     <button class="iconbtn" id="gear" type="button" aria-label="Settings" aria-haspopup="dialog"></button>
     <button class="iconbtn" id="mute" type="button" aria-label="Sound" aria-pressed="true"></button>
   </header>
@@ -1633,6 +1637,7 @@ function closeAdmin(){$('admin').hidden=true;}
 $('brand').addEventListener('click',()=>{const t=Date.now();brandTaps=brandTaps.filter(x=>t-x<3000);brandTaps.push(t);if(brandTaps.length>=5){brandTaps=[];openAdmin();}});
 if(location.hash==='#admin')setTimeout(openAdmin,400);
 $('admClose').addEventListener('click',closeAdmin);
+$('admBtn').addEventListener('click',openAdmin);
 $('admin').addEventListener('click',e=>{if(e.target.id==='admin')closeAdmin();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('admin').hidden)closeAdmin();});
 function parseAmt(v){v=String(v).trim().toLowerCase().replace(/,/g,'');const m=/^(\d+(?:\.\d+)?(?:e\d+)?)\s*([kmbt]|qa|qi)?$/.exec(v);if(!m)return NaN;
