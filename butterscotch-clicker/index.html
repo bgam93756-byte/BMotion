@@ -348,13 +348,18 @@ body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webki
 input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 /* iOS zooms in on any text box smaller than 16px when it's focused */
 .set-row select,.set-row input:not([type=range]),.set-row textarea{font-size:16px}
+.agrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.agrid2 .btn{min-height:44px;font-size:14px;padding:0 10px}
+.adm-warn{margin:0;padding:10px 12px;border-radius:12px;background:rgba(240,138,110,.12);border:1px solid var(--bad);font-size:14px;color:var(--fg)}
+.signin .box.wide h3{margin:4px 0 0}
+.signin .box.wide>*{flex-shrink:0}
 </style>
 </head>
 <body>
 <canvas id="bg"></canvas>
 <div class="app">
   <header class="top">
-    <h1 class="brand">Butterscotch Clicker</h1>
+    <h1 class="brand" id="brand">Butterscotch Clicker</h1>
     <div class="news" aria-label="Candy news"><span class="tag">News</span><span id="news"></span></div>
     <button class="acct" id="acct" type="button" aria-haspopup="dialog"><img id="acctImg" alt=""><span><span class="an" id="acctName">Guest</span><span class="as" id="acctSub">Sign in</span></span></button>
     <button class="iconbtn" id="gear" type="button" aria-label="Settings" aria-haspopup="dialog"></button>
@@ -482,6 +487,18 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
   <h2 id="mTitle">Candy match</h2><p class="sub" id="mInfo" style="margin:0"></p>
   <div class="mgrid" id="mgrid"></div>
   <button class="link" id="mQuit" type="button" style="align-self:center">Quit</button>
+</div></div>
+<div class="signin" id="admin" role="dialog" aria-modal="true" aria-labelledby="admTitle" hidden><div class="box wide">
+  <h2 id="admTitle">Admin menu</h2>
+  <p class="adm-warn" id="admWarn">Admin tools mark this save as modded. A modded save stays off the leaderboard so scores stay fair.</p>
+  <h3>Butterscotch</h3>
+  <div class="agrid2"><button class="btn" type="button" data-adm="hour">+1 hour of production</button><button class="btn" type="button" data-adm="m">+1 million</button><button class="btn" type="button" data-adm="b">+1 billion</button><button class="btn" type="button" data-adm="t">+1 trillion</button></div>
+  <div class="set-row col"><label for="admAmt">Add an exact amount</label><div class="inrow"><input id="admAmt" inputmode="decimal" placeholder="e.g. 5e12 or 250000" autocomplete="off"><button class="btn sm" type="button" data-adm="amt">Add</button></div></div>
+  <h3>Progress</h3>
+  <div class="agrid2"><button class="btn" type="button" data-adm="b10">+10 of every building</button><button class="btn" type="button" data-adm="b100">+100 of every building</button><button class="btn" type="button" data-adm="upg">Unlock all upgrades</button><button class="btn" type="button" data-adm="ach">Unlock all trophies</button><button class="btn" type="button" data-adm="cry">+10 sugar crystals</button><button class="btn" type="button" data-adm="crown">+10 crowns</button><button class="btn" type="button" data-adm="dust">+5 stardust</button><button class="btn" type="button" data-adm="res">Finish all research</button></div>
+  <h3>Events</h3>
+  <div class="agrid2"><button class="btn" type="button" data-adm="gold">Golden butterscotch now</button><button class="btn" type="button" data-adm="rain">Start sugar rain</button><button class="btn" type="button" data-adm="golem">Summon Gummy Golem</button><button class="btn" type="button" data-adm="frenzy">Frenzy for 77 seconds</button><button class="btn" type="button" data-adm="cool">Reset all cooldowns</button><button class="btn" type="button" data-adm="orders">Finish all orders</button></div>
+  <button class="btn" type="button" id="admClose">Done</button>
 </div></div>
 <div id="toasts" aria-live="polite"></div>
 
@@ -1227,6 +1244,7 @@ function cloudSave(force){
   FB.db.collection('saves').doc(AC.id).set({state:JSON.stringify(S),allTime:S.allTime,at:now}).catch(()=>{});
 }
 function lbPost(force){
+  if(S.modded)return;
   if(!AC.signed||!FB.ok)return;
   const now=Date.now();if(!force&&now-LB.lastPost<30000)return;LB.lastPost=now;
   FB.db.collection('leaderboard').doc(AC.id).set({
@@ -1243,7 +1261,7 @@ function lbListen(){
 }
 function renderLB(){
   const box=$('lb');if(!box)return;
-  $('lbNote').textContent=!FB.ok?'':AC.signed?'You are on the board. Your score updates every 30 seconds.':'Sign in with Google (tap Guest at the top) to put your score on the board.';
+  $('lbNote').textContent=!FB.ok?'':S.modded?'This save used the admin menu, so it stays off the leaderboard.':AC.signed?'You are on the board. Your score updates every 30 seconds.':'Sign in with Google (tap Guest at the top) to put your score on the board.';
   if(!FB.ok){box.innerHTML='<div class="empty">The leaderboard turns on once Firebase is set up.</div>';return;}
   const k=LB.rows.map(r=>r.id+r.allTime+r.cps+r.name).join()+AC.id+LB.mode;if(k===LB.key)return;LB.key=k;
   if(!LB.rows.length){box.innerHTML='<div class="empty">No scores yet. Sign in and be the first.</div>';return;}
@@ -1355,7 +1373,7 @@ function paintTheme(){THEMES.forEach(t=>document.body.classList.toggle('theme-'+
 function keepCommon(){
   const k={};
   ['allTime','ach','crowns','crownBal','perks','crystals','research','lastDay','streak','rainCaught','eventTaps','eventRain','mktProfit','pulls','melts','clicks','clickEarned','golden','firstStart','muted','amt','tab','skin','ordersDone','perfectPull',
-   'numFmt','vol','music','fx','theme','nick','tipsSeen','tipsOff','bosses','matches','matchBest','stardust','ascends','crownBase','hist','exported','skinChanged','nightOwl']
+   'numFmt','vol','music','fx','theme','nick','tipsSeen','tipsOff','bosses','matches','matchBest','stardust','ascends','crownBase','hist','exported','modded','skinChanged','nightOwl']
    .forEach(f=>{if(S[f]!==undefined)k[f]=S[f];});
   return k;
 }
@@ -1606,6 +1624,40 @@ document.addEventListener('keydown',e=>{
   const a=document.activeElement;if(a&&a!==document.body)return;
   if(!$('settings').hidden||!$('matchDlg').hidden||!$('signin').hidden)return;
   e.preventDefault();el.candy.click();
+});
+
+/* admin menu: tap the title 5 times quickly (or open the page with #admin) */
+let brandTaps=[];
+function openAdmin(){$('admin').hidden=false;$('admWarn').textContent=S.modded?'This save is modded, so it stays off the leaderboard.':'Admin tools mark this save as modded. A modded save stays off the leaderboard so scores stay fair.';$('admClose').focus();}
+function closeAdmin(){$('admin').hidden=true;}
+$('brand').addEventListener('click',()=>{const t=Date.now();brandTaps=brandTaps.filter(x=>t-x<3000);brandTaps.push(t);if(brandTaps.length>=5){brandTaps=[];openAdmin();}});
+if(location.hash==='#admin')setTimeout(openAdmin,400);
+$('admClose').addEventListener('click',closeAdmin);
+$('admin').addEventListener('click',e=>{if(e.target.id==='admin')closeAdmin();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('admin').hidden)closeAdmin();});
+function parseAmt(v){v=String(v).trim().toLowerCase().replace(/,/g,'');const m=/^(\d+(?:\.\d+)?(?:e\d+)?)\s*([kmbt]|qa|qi)?$/.exec(v);if(!m)return NaN;
+  return parseFloat(m[1])*({k:1e3,m:1e6,b:1e9,t:1e12,qa:1e15,qi:1e18}[m[2]]||1);}
+$('admin').addEventListener('click',e=>{
+  const b=e.target.closest('[data-adm]');if(!b)return;const k=b.dataset.adm;let msg='';
+  const give=n=>{earn(n);msg=`+${fmt(n)} butterscotches`;};
+  if(k==='hour')give(Math.max(D.base,1)*3600);
+  else if(k==='m')give(1e6);else if(k==='b')give(1e9);else if(k==='t')give(1e12);
+  else if(k==='amt'){const n=parseAmt($('admAmt').value);if(!(n>0)||!isFinite(n)){toast('clock','Not a number','Type something like 250000, 5e12 or 3b.');return;}give(n);}
+  else if(k==='b10'||k==='b100'){const n=k==='b10'?10:100;B.forEach(x=>{S.own[x.id]=own(x.id)+n;S.revealed[x.id]=1;});S.bought+=n*B.length;msg=`+${n} of every building`;}
+  else if(k==='upg'){U.forEach(u=>S.upg[u.id]=1);msg='All upgrades unlocked';}
+  else if(k==='ach'){A.forEach(a=>{if(!S.ach[a.id])S.ach[a.id]=Date.now();});msg='All trophies unlocked';}
+  else if(k==='cry'){S.crystals=(S.crystals||0)+10;msg='+10 sugar crystals';}
+  else if(k==='crown'){S.crowns+=10;S.crownBal+=10;msg='+10 Caramel Crowns';}
+  else if(k==='dust'){S.stardust=(S.stardust||0)+5;msg='+5 stardust';}
+  else if(k==='res'){RALL.forEach(r=>S.research[r.id]=1);msg='All research finished';}
+  else if(k==='gold'){closeAdmin();showGolden();msg='A golden butterscotch appeared';}
+  else if(k==='rain'){closeAdmin();if(!rainUntil)startRain();msg='Sugar rain started';}
+  else if(k==='golem'){closeAdmin();if(!BOSS.on)bossStart();msg='';}
+  else if(k==='frenzy'){S.buffs=S.buffs.filter(x=>x.id!=='frenzy');S.buffs.push({id:'frenzy',until:Date.now()+77000,dur:77});msg='Frenzy: production ×7';}
+  else if(k==='cool'){S.pullNext=0;S.matchNext=0;S.lastDay='';BOSS.next=Date.now()+5000;msg='Cooldowns reset';}
+  else if(k==='orders'){S.orders.forEach(o=>{o.start=-1e18;});ordersKey='';msg='All orders are ready to claim';}
+  S.modded=true;resetKeys();compute();render();save();
+  if(msg)toast('star','Admin',msg);
 });
 
 /* ---------- boot ---------- */
