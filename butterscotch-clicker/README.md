@@ -4,6 +4,16 @@ A candy-shop clicker game in one HTML file, with Google sign-in, cloud saves and
 
 Without Firebase set up, the game still works in guest mode and saves progress on the device.
 
+## What's in the game
+
+- 26 buildings, 100+ upgrades (including candy cats that grow with your trophies) and 158 trophies with rarity tiers
+- Golden butterscotches, sugar rain, a Gummy Golem boss fight and seasonal events
+- Mini-games: candy pull, candy match (memory) and the candy market
+- Customer orders, daily treats, research (sugar crystals), melt-down crowns with perks, and ascension (stardust)
+- Settings: sound volume, background music, particles, number style, unlockable backgrounds, leaderboard name, and save codes to move progress between devices
+- Tips for new players, a per-second history chart, and Space to tap on a keyboard
+- Google sign-in, cloud saves and a leaderboard (most made or fastest) once Firebase is set up
+
 ## Files
 
 | File | What it is |
